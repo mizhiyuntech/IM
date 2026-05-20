@@ -6,13 +6,10 @@ include ':app'
 includeBuild('../node_modules/@react-native/gradle-plugin')
 
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     repositories {
         google()
         mavenCentral()
-        flatDir {
-            dirs "${rootProject.projectDir}/../node_modules/@react-native-async-storage/async-storage/android/local_repo"
-        }
         maven {
             url "${rootProject.projectDir}/../node_modules/@react-native-async-storage/async-storage/android/local_repo"
         }
