@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 import { Colors } from '../../theme';
 import { IconOutline } from '@ant-design/icons-react-native';
@@ -10,14 +10,23 @@ interface AvatarProps {
 }
 
 function Avatar({ uri, name, size = 44 }: AvatarProps) {
+  const [imageError, setImageError] = useState(false);
+
   const containerStyle = {
     width: size,
     height: size,
     borderRadius: size / 2,
   };
 
-  if (uri) {
-    return <Image source={{ uri }} style={[containerStyle, styles.image]} />;
+  if (uri && !imageError) {
+    return (
+      <Image
+        source={{ uri }}
+        style={[containerStyle, styles.image]}
+        onError={() => setImageError(true)}
+        defaultSource={undefined}
+      />
+    );
   }
 
   return (
