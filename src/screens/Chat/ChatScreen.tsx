@@ -28,7 +28,9 @@ export default function ChatScreen() {
   const route = useRoute<ChatRouteProp>();
   const navigation = useNavigation<ChatNavProp>();
   const { conversationId, conversationType, groupId } = route.params;
-  const { sendMessage, setActiveConversationId, markAsRead } = useAppContext();
+  const { sendMessage, setActiveConversationId, markAsRead, state } = useAppContext();
+  const currentConv = state.conversations.find(c => c.id === conversationId);
+  const convName = currentConv?.name || route.params.conversationName;
   const [inputText, setInputText] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [keyboardH, setKeyboardH] = useState(0);
@@ -36,8 +38,12 @@ export default function ChatScreen() {
   const insets = useSafeAreaInsets();
 
   useLayoutEffect(() => {
+    navigation.setOptions({
+      headerTitle: convName,
+    });
     if (conversationType === 'group' && groupId) {
       navigation.setOptions({
+        headerTitle: convName,
         headerRight: () => (
           <Pressable
             onPress={() => navigation.navigate('GroupSettings', { groupId, conversationId })}
@@ -47,7 +53,7 @@ export default function ChatScreen() {
         ),
       });
     }
-  }, [navigation, conversationType, groupId, conversationId]);
+  }, [navigation, convName, conversationType, groupId, conversationId]);
 
   useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', (e) => {

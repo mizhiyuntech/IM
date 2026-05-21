@@ -17,7 +17,7 @@ import { RootStackParamList } from '../../navigation';
 type ProfileNavProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function ProfileScreen() {
-  const { state, logout, updateCurrentUser, fetchConversations } = useAppContext();
+  const { state, logout, updateCurrentUser, fetchConversations, fetchUsers } = useAppContext();
   const navigation = useNavigation<ProfileNavProp>();
   const user = state.currentUser;
 
@@ -40,6 +40,7 @@ export default function ProfileScreen() {
                 phone: res.phone,
               });
               fetchConversations();
+              fetchUsers();
               Toast.success({ content: '昵称修改成功', duration: 1 });
         } catch (e: any) {
           Toast.fail({ content: e.message || '修改失败', duration: 2 });

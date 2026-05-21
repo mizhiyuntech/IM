@@ -1,13 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  Pressable,
-  TextInput,
-} from 'react-native';
-import { Toast, Modal, Button } from '@ant-design/react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, TextInput } from 'react-native';
+import { Toast, Modal, Button, List } from '@ant-design/react-native';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../theme';
 import { useAppContext } from '../../context/AppContext';
 import { GroupMemberInfo, GroupRole } from '../../types';
@@ -82,10 +75,8 @@ export default function GroupSettingsScreen({ route }: GroupSettingsProps) {
   const handleSetRole = useCallback(
     (userId: string, userName: string, currentRole: GroupRole) => {
       if (!isOwner) return;
-
       const newRole: GroupRole = currentRole === 'admin' ? 'member' : 'admin';
       const label = newRole === 'admin' ? '设为管理员' : '取消管理员';
-
       Modal.alert(label, `确定将 ${userName} ${label}？`, [
         { text: '取消', onPress: () => {} },
         {
@@ -145,58 +136,40 @@ export default function GroupSettingsScreen({ route }: GroupSettingsProps) {
     ]);
   }, [groupId, conversationId, deleteConversation, fetchConversations, navigation]);
 
-  const getRoleLabel = (role: GroupRole) => {
-    if (role === 'owner') return '群主';
-    if (role === 'admin') return '管理员';
-    return '';
-  };
-
-  const getRoleColor = (role: GroupRole) => {
-    if (role === 'owner') return Colors.groupOwner;
-    if (role === 'admin') return Colors.groupAdmin;
-    return Colors.textHint;
-  };
-
-  const getRoleBgColor = (role: GroupRole) => {
-    if (role === 'owner') return Colors.groupOwnerBg;
-    if (role === 'admin') return Colors.groupAdminBg;
-    return Colors.background;
-  };
-
   const renderMember = useCallback(
     ({ item }: { item: GroupMemberInfo }) => {
       const isSelf = item.user_id === state.currentUser?.id;
-      const roleLabel = getRoleLabel(item.role as GroupRole);
-      const canManage = isOwner && !isSelf && item.role !== 'owner';
+      const role = item.role as GroupRole;
+      const canManage = isOwner && !isSelf && role !== 'owner';
 
       return (
-        <View style={styles.memberItem}>
-          <Avatar uri={item.avatar} name={item.name} size={40} />
-          <View style={styles.memberInfo}>
-            <View style={styles.memberNameRow}>
-              <Text style={styles.memberName} numberOfLines={1}>
-                {item.name}
-                {isSelf ? ' (我)' : ''}
-              </Text>
-              {roleLabel ? (
-                <View style={[styles.roleBadge, { backgroundColor: getRoleBgColor(item.role as GroupRole) }]}>
-                  <Text style={[styles.roleBadgeText, { color: getRoleColor(item.role as GroupRole) }]}>
-                    {roleLabel}
-                  </Text>
+        <List.Item
+          thumb={<Avatar uri={item.avatar} name={item.name} size={40} />}
+          arrow={canManage ? 'horizontal' : ''}
+          onPress={canManage ? () => handleSetRole(item.user_id, item.name, role) : undefined}
+          extra={
+            <View style={styles.memberExtra}>
+              {role === 'owner' && (
+                <View style={[styles.roleTag, { backgroundColor: Colors.groupOwnerBg }]}>
+                  <Text style={[styles.roleTagText, { color: Colors.groupOwner }]}>群主</Text>
                 </View>
-              ) : null}
+              )}
+              {role === 'admin' && (
+                <View style={[styles.roleTag, { backgroundColor: Colors.groupAdminBg }]}>
+                  <Text style={[styles.roleTagText, { color: Colors.groupAdmin }]}>管理员</Text>
+                </View>
+              )}
+              {canManage && (
+                <Text style={styles.manageText}>
+                  {role === 'admin' ? '取消管理' : '设为管理'}
+                </Text>
+              )}
             </View>
-          </View>
-          {canManage && (
-            <Pressable
-              style={styles.manageBtn}
-              onPress={() => handleSetRole(item.user_id, item.name, item.role as GroupRole)}>
-              <Text style={styles.manageBtnText}>
-                {item.role === 'admin' ? '取消管理' : '设为管理'}
-              </Text>
-            </Pressable>
-          )}
-        </View>
+          }>
+          <Text style={styles.memberName} numberOfLines={1}>
+            {item.name}{isSelf ? ' (我)' : ''}
+          </Text>
+        </List.Item>
       );
     },
     [state.currentUser, isOwner, handleSetRole],
@@ -207,42 +180,32 @@ export default function GroupSettingsScreen({ route }: GroupSettingsProps) {
   return (
     <View style={styles.container}>
       <View style={styles.nameSection}>
-        <View style={styles.nameRow}>
-          {editingName ? (
-            <View style={styles.nameEditRow}>
-              <TextInput
-                style={styles.nameInput}
-                value={newName}
-                onChangeText={setNewName}
-                maxLength={20}
-                autoFocus
-              />
-              <Pressable
-                style={styles.nameEditBtn}
-                onPress={handleUpdateName}
-                disabled={loading}>
-                <Text style={styles.nameEditBtnText}>保存</Text>
+        {editingName ? (
+          <View style={styles.nameEditRow}>
+            <TextInput
+              style={styles.nameInput}
+              value={newName}
+              onChangeText={setNewName}
+              maxLength={20}
+              autoFocus
+            />
+            <Button type="primary" size="small" onPress={handleUpdateName} loading={loading}>
+              保存
+            </Button>
+            <Button size="small" onPress={() => { setEditingName(false); setNewName(groupInfo?.name || ''); }}>
+              取消
+            </Button>
+          </View>
+        ) : (
+          <View style={styles.nameDisplayRow}>
+            <Text style={styles.groupName}>{groupInfo?.name || ''}</Text>
+            {(isOwner || isAdmin) && (
+              <Pressable onPress={() => setEditingName(true)}>
+                <IconOutline name="edit" size={18} color={Colors.primary} />
               </Pressable>
-              <Pressable
-                style={styles.nameEditBtn}
-                onPress={() => {
-                  setEditingName(false);
-                  setNewName(groupInfo?.name || '');
-                }}>
-                <Text style={styles.nameEditBtnText}>取消</Text>
-              </Pressable>
-            </View>
-          ) : (
-            <View style={styles.nameDisplayRow}>
-              <Text style={styles.groupName}>{groupInfo?.name || ''}</Text>
-              {(isOwner || isAdmin) && (
-                <Pressable onPress={() => setEditingName(true)}>
-                  <IconOutline name="edit" size={18} color={Colors.primary} />
-                </Pressable>
-              )}
-            </View>
-          )}
-        </View>
+            )}
+          </View>
+        )}
         <Text style={styles.memberCount}>
           共 {groupInfo?.member_count || members.length} 人
         </Text>
@@ -260,16 +223,12 @@ export default function GroupSettingsScreen({ route }: GroupSettingsProps) {
 
       <View style={styles.bottomSection}>
         {!isOwner && (
-          <Button
-            style={styles.leaveButton}
-            onPress={handleLeave}>
+          <Button style={styles.leaveButton} onPress={handleLeave}>
             <Text style={styles.dangerText}>退出群聊</Text>
           </Button>
         )}
         {isOwner && (
-          <Button
-            style={styles.leaveButton}
-            onPress={handleDissolve}>
+          <Button style={styles.leaveButton} onPress={handleDissolve}>
             <Text style={styles.dangerText}>解散群聊</Text>
           </Button>
         )}
@@ -289,9 +248,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.lg,
     marginBottom: Spacing.sm,
   },
-  nameRow: {
-    marginBottom: Spacing.xs,
-  },
   nameDisplayRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -306,6 +262,7 @@ const styles = StyleSheet.create({
   nameEditRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: Spacing.sm,
   },
   nameInput: {
     flex: 1,
@@ -316,19 +273,11 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     fontSize: FontSize.lg,
     color: Colors.textPrimary,
-    marginRight: Spacing.sm,
-  },
-  nameEditBtn: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-  },
-  nameEditBtnText: {
-    fontSize: FontSize.md,
-    color: Colors.primary,
   },
   memberCount: {
     fontSize: FontSize.sm,
     color: Colors.textHint,
+    marginTop: Spacing.xs,
   },
   memberSection: {
     flex: 1,
@@ -344,44 +293,27 @@ const styles = StyleSheet.create({
   memberList: {
     paddingBottom: Spacing.lg,
   },
-  memberItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: Spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.divider,
-  },
-  memberInfo: {
-    flex: 1,
-    marginLeft: Spacing.md,
-  },
-  memberNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   memberName: {
     fontSize: FontSize.md,
     color: Colors.textPrimary,
-    marginRight: Spacing.sm,
   },
-  roleBadge: {
+  memberExtra: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  manageText: {
+    fontSize: FontSize.xs,
+    color: Colors.primary,
+  },
+  roleTag: {
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 3,
   },
-  roleBadgeText: {
+  roleTagText: {
     fontSize: FontSize.xs,
     fontWeight: '600',
-  },
-  manageBtn: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    backgroundColor: Colors.primaryLight,
-    borderRadius: BorderRadius.md,
-  },
-  manageBtnText: {
-    fontSize: FontSize.sm,
-    color: Colors.primary,
   },
   bottomSection: {
     backgroundColor: Colors.white,

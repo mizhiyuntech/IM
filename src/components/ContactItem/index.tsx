@@ -2,6 +2,7 @@ import React, { memo, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Colors, Spacing, FontSize } from '../../theme';
 import { User } from '../../types';
+import { List } from '@ant-design/react-native';
 import Avatar from '../Avatar';
 
 interface ContactItemProps {
@@ -15,33 +16,23 @@ function ContactItem({ user, onPress }: ContactItemProps) {
   }, [onPress, user]);
 
   return (
-    <Pressable
-      onPress={handlePress}
-      style={({ pressed }) => [styles.container, pressed && styles.pressed]}>
-      <Avatar uri={user.avatar} name={user.name} size={44} />
-      <View style={styles.info}>
-        <Text style={styles.name}>{user.name}</Text>
-        <Text style={styles.phone}>{user.phone}</Text>
-      </View>
+    <Pressable onPress={handlePress} style={({ pressed }) => [styles.wrapper, pressed && styles.pressed]}>
+      <List.Item
+        thumb={<Avatar uri={user.avatar} name={user.name} size={44} />}
+        arrow="">
+        <Text style={styles.name} numberOfLines={1}>{user.name}</Text>
+        <Text style={styles.phone} numberOfLines={1}>{user.phone}</Text>
+      </List.Item>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
+  wrapper: {
     backgroundColor: Colors.white,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.divider,
   },
   pressed: {
     backgroundColor: Colors.background,
-  },
-  info: {
-    marginLeft: Spacing.md,
   },
   name: {
     fontSize: FontSize.lg,

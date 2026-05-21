@@ -20,7 +20,6 @@ function ChatBubble({ message, conversationType, groupId }: ChatBubbleProps) {
 
   useEffect(() => {
     if (conversationType !== 'group' || !groupId) return;
-
     let mounted = true;
     api.getGroupMembers(groupId).then(members => {
       if (!mounted) return;
@@ -30,7 +29,6 @@ function ChatBubble({ message, conversationType, groupId }: ChatBubbleProps) {
       });
       setMemberRoles(roles);
     }).catch(() => {});
-
     return () => { mounted = false; };
   }, [conversationType, groupId]);
 
@@ -56,31 +54,17 @@ function ChatBubble({ message, conversationType, groupId }: ChatBubbleProps) {
   };
 
   return (
-    <View
-      style={[
-        styles.container,
-        isSelf ? styles.containerSelf : styles.containerOther,
-      ]}>
-      {!isSelf && (
-        <Avatar uri={sender?.avatar} name={sender?.name} size={36} />
-      )}
-      <View
-        style={[
-          styles.bubble,
-          isSelf ? styles.bubbleSelf : styles.bubbleOther,
-        ]}>
+    <View style={[styles.container, isSelf ? styles.containerSelf : styles.containerOther]}>
+      {!isSelf && <Avatar uri={sender?.avatar} name={sender?.name} size={36} />}
+      <View style={[styles.bubble, isSelf ? styles.bubbleSelf : styles.bubbleOther]}>
         {!isSelf && conversationType === 'group' && (
-          <View style={styles.senderRow}>
-            {renderRoleTag()}
-          </View>
+          <View style={styles.senderRow}>{renderRoleTag()}</View>
         )}
         <Text style={[styles.text, isSelf ? styles.textSelf : styles.textOther]}>
           {message.content}
         </Text>
       </View>
-      {isSelf && (
-        <Avatar uri={state.currentUser?.avatar} name={state.currentUser?.name} size={36} />
-      )}
+      {isSelf && <Avatar uri={state.currentUser?.avatar} name={state.currentUser?.name} size={36} />}
     </View>
   );
 }
@@ -122,12 +106,12 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
   },
   roleTag: {
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 2,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 3,
   },
   roleTagText: {
-    fontSize: 9,
+    fontSize: FontSize.xs,
     fontWeight: '600',
   },
   text: {

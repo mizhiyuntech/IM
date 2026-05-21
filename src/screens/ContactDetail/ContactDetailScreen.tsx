@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { Toast } from '@ant-design/react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { Toast, Button, List } from '@ant-design/react-native';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../theme';
 import Avatar from '../../components/Avatar';
 import { IconOutline } from '@ant-design/icons-react-native';
@@ -59,16 +59,21 @@ export default function ContactDetailScreen({ route }: ContactDetailProps) {
       </View>
 
       <View style={styles.actions}>
-        <Pressable
-          style={styles.actionItem}
+        <Button
+          type="primary"
           onPress={handleSendMessage}
-          disabled={sending}>
-          <View style={[styles.actionIcon, { backgroundColor: Colors.primary }]}>
-            <IconOutline name="message" size={22} color={Colors.white} />
-          </View>
-          <Text style={styles.actionLabel}>发消息</Text>
-        </Pressable>
+          loading={sending}
+          style={styles.sendButton}>
+          <IconOutline name="message" size={18} color={Colors.white} />
+          发消息
+        </Button>
       </View>
+
+      <List>
+        <List.Item thumb={<IconOutline name="phone" size={18} color={Colors.primary} />} extra={userPhone}>
+          手机号
+        </List.Item>
+      </List>
     </View>
   );
 }
@@ -105,22 +110,11 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     paddingVertical: Spacing.lg,
     paddingHorizontal: Spacing.xl,
-  },
-  actionItem: {
-    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: Spacing.md,
   },
-  actionIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: BorderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionLabel: {
-    fontSize: FontSize.lg,
-    color: Colors.textPrimary,
-    marginLeft: Spacing.lg,
+  sendButton: {
+    width: '100%',
+    height: 48,
+    borderRadius: BorderRadius.round,
   },
 });

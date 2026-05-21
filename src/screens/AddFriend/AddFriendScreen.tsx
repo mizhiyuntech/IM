@@ -1,11 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-} from 'react-native';
-import { Input, Button, Toast } from '@ant-design/react-native';
+import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { Input, Button, Toast, List } from '@ant-design/react-native';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../theme';
 import { api } from '../../services/api';
 import { useAppContext } from '../../context/AppContext';
@@ -70,25 +65,26 @@ export default function AddFriendScreen() {
 
   const renderItem = useCallback(
     ({ item }: { item: SearchResult }) => (
-      <View style={styles.resultItem}>
-        <Avatar uri={item.avatar} name={item.name} size={44} />
-        <View style={styles.resultInfo}>
-          <Text style={styles.resultName}>{item.name}</Text>
-          <Text style={styles.resultPhone}>{item.phone}</Text>
-        </View>
-        {isContact(item.id) ? (
-          <Text style={styles.addedText}>已添加</Text>
-        ) : (
-          <Button
-            type="primary"
-            size="small"
-            onPress={() => handleAdd(item.id)}
-            loading={addingId === item.id}
-            style={styles.addButton}>
-            添加
-          </Button>
-        )}
-      </View>
+      <List.Item
+        thumb={<Avatar uri={item.avatar} name={item.name} size={44} />}
+        arrow=""
+        extra={
+          isContact(item.id) ? (
+            <Text style={styles.addedText}>已添加</Text>
+          ) : (
+            <Button
+              type="primary"
+              size="small"
+              onPress={() => handleAdd(item.id)}
+              loading={addingId === item.id}
+              style={styles.addButton}>
+              添加
+            </Button>
+          )
+        }>
+        <Text style={styles.resultName}>{item.name}</Text>
+        <Text style={styles.resultPhone}>{item.phone}</Text>
+      </List.Item>
     ),
     [isContact, addingId, handleAdd],
   );
@@ -158,18 +154,6 @@ const styles = StyleSheet.create({
   listContent: {
     paddingBottom: Spacing.md,
   },
-  resultItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.divider,
-  },
-  resultInfo: {
-    flex: 1,
-    marginLeft: Spacing.md,
-  },
   resultName: {
     fontSize: FontSize.lg,
     color: Colors.textPrimary,
@@ -187,7 +171,7 @@ const styles = StyleSheet.create({
   },
   addedText: {
     fontSize: FontSize.md,
-    color: Colors.textHint,
+    color: Colors.success,
   },
   empty: {
     flex: 1,

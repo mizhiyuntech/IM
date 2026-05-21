@@ -1,18 +1,10 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  Pressable,
-  TextInput,
-} from 'react-native';
-import { Toast, Button } from '@ant-design/react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, TextInput } from 'react-native';
+import { Toast, Button, Input, List, Checkbox, Tag } from '@ant-design/react-native';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../theme';
 import { useAppContext } from '../../context/AppContext';
 import { User } from '../../types';
 import Avatar from '../../components/Avatar';
-import { IconOutline } from '@ant-design/icons-react-native';
 import { api } from '../../services/api';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -55,10 +47,7 @@ export default function CreateGroupScreen() {
 
     setCreating(true);
     try {
-      const res = await api.createGroup(
-        groupName.trim(),
-        Array.from(selectedIds),
-      );
+      const res = await api.createGroup(groupName.trim(), Array.from(selectedIds));
       await fetchConversations();
       navigation.navigate('Chat', {
         conversationId: res.conversation.id,
@@ -76,23 +65,13 @@ export default function CreateGroupScreen() {
     ({ item }: { item: User }) => {
       const isSelected = selectedIds.has(item.id);
       return (
-        <Pressable
-          style={styles.contactItem}
+        <List.Item
+          thumb={<Avatar uri={item.avatar} name={item.name} size={40} />}
+          arrow=""
+          extra={<Checkbox checked={isSelected} onChange={() => toggleSelect(item.id)} />}
           onPress={() => toggleSelect(item.id)}>
-          <Avatar uri={item.avatar} name={item.name} size={40} />
-          <Text style={styles.contactName} numberOfLines={1}>
-            {item.name}
-          </Text>
-          <View
-            style={[
-              styles.checkBox,
-              isSelected && styles.checkBoxSelected,
-            ]}>
-            {isSelected && (
-              <IconOutline name="check" size={14} color={Colors.white} />
-            )}
-          </View>
-        </Pressable>
+          <Text style={styles.contactName} numberOfLines={1}>{item.name}</Text>
+        </List.Item>
       );
     },
     [selectedIds, toggleSelect],
@@ -104,32 +83,30 @@ export default function CreateGroupScreen() {
     <View style={styles.container}>
       <View style={styles.inputSection}>
         <Text style={styles.label}>群名称</Text>
-        <TextInput
-          style={styles.nameInput}
+        <Input
           value={groupName}
           onChangeText={setGroupName}
           placeholder="请输入群名称"
-          placeholderTextColor={Colors.textHint}
           maxLength={20}
+          style={styles.nameInput}
         />
       </View>
 
       <View style={styles.selectedSection}>
-        <Text style={styles.label}>
-          已选择 {selectedIds.size} 人
-        </Text>
+        <Text style={styles.label}>已选择 {selectedIds.size} 人</Text>
         {selectedIds.size > 0 && (
           <View style={styles.selectedList}>
             {Array.from(selectedIds).map(uid => {
               const user = contacts.find(u => u.id === uid);
               if (!user) return null;
               return (
-                <View key={uid} style={styles.selectedChip}>
-                  <Text style={styles.selectedChipText}>{user.name}</Text>
-                  <Pressable onPress={() => toggleSelect(uid)}>
-                    <IconOutline name="close" size={12} color={Colors.textHint} />
-                  </Pressable>
-                </View>
+                <Tag
+                  key={uid}
+                  closable
+                  onClose={() => toggleSelect(uid)}
+                  style={styles.selectedTag}>
+                  {user.name}
+                </Tag>
               );
             })}
           </View>
@@ -177,13 +154,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   nameInput: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.border,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    fontSize: FontSize.lg,
-    color: Colors.textPrimary,
+    borderWidth: 0,
   },
   selectedSection: {
     paddingHorizontal: Spacing.lg,
@@ -194,21 +165,10 @@ const styles = StyleSheet.create({
   selectedList: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: Spacing.xs,
   },
-  selectedChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.primaryLight,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.md,
-    marginRight: Spacing.sm,
+  selectedTag: {
     marginBottom: Spacing.xs,
-  },
-  selectedChipText: {
-    fontSize: FontSize.sm,
-    color: Colors.primary,
-    marginRight: Spacing.xs,
   },
   listSection: {
     flex: 1,
@@ -218,31 +178,9 @@ const styles = StyleSheet.create({
   listContent: {
     paddingBottom: Spacing.lg,
   },
-  contactItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: Spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.divider,
-  },
   contactName: {
-    flex: 1,
     fontSize: FontSize.md,
     color: Colors.textPrimary,
-    marginLeft: Spacing.md,
-  },
-  checkBox: {
-    width: 22,
-    height: 22,
-    borderRadius: BorderRadius.sm,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkBoxSelected: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
   },
   bottomBar: {
     paddingHorizontal: Spacing.lg,

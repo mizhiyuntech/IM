@@ -24,7 +24,6 @@ function Avatar({ uri, name, size = 44 }: AvatarProps) {
         source={{ uri }}
         style={[containerStyle, styles.image]}
         onError={() => setImageError(true)}
-        defaultSource={undefined}
       />
     );
   }
