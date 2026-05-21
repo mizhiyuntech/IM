@@ -9,7 +9,7 @@ import { Colors, Spacing, FontSize, BorderRadius } from '../../theme';
 import { Conversation } from '../../types';
 import { formatTime } from '../../utils';
 import Avatar from '../Avatar';
-import { IconFill } from '@ant-design/icons-react-native';
+import { IconOutline } from '@ant-design/icons-react-native';
 
 interface ConversationItemProps {
   conversation: Conversation;
@@ -57,7 +57,7 @@ function ConversationItem({
           <View style={styles.nameRow}>
             {conversation.type === 'group' && (
               <View style={styles.groupTag}>
-                <IconFill name="team" size={10} color={Colors.primary} />
+                <IconOutline name="team" size={10} color={Colors.primary} />
               </View>
             )}
             <Text style={styles.name} numberOfLines={1}>

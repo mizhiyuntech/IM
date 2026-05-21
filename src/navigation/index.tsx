@@ -75,9 +75,7 @@ const tabScreenOptions = ({
       );
     }
     if (route.name === 'Profile') {
-      return focused ? (
-        <IconFill name="user" size={iconSize} color={iconColor} />
-      ) : (
+      return (
         <IconOutline name="user" size={iconSize} color={iconColor} />
       );
     }

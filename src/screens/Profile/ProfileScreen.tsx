@@ -6,7 +6,7 @@ import {
   ScrollView,
   Pressable,
 } from 'react-native';
-import { Modal, Toast } from '@ant-design/react-native';
+import { List, Modal, Toast, Button } from '@ant-design/react-native';
 import { Colors, Spacing, FontSize, BorderRadius, Shadows } from '../../theme';
 import { useAppContext } from '../../context/AppContext';
 import { IconOutline } from '@ant-design/icons-react-native';
@@ -17,42 +17,6 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation';
 
 type ProfileNavProp = NativeStackNavigationProp<RootStackParamList>;
-
-interface RowProps {
-  icon: string;
-  iconBg: string;
-  iconColor: string;
-  label: string;
-  extra?: string;
-  onPress?: () => void;
-  showArrow?: boolean;
-  isLast?: boolean;
-}
-
-function Row({ icon, iconBg, iconColor, label, extra, onPress, showArrow, isLast }: RowProps) {
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={!onPress}
-      style={({ pressed }) => [styles.row, pressed && onPress ? styles.rowPressed : null]}>
-      <View style={[styles.iconBox, { backgroundColor: iconBg }]}>
-        <IconOutline name={icon as any} size={18} color={iconColor} />
-      </View>
-      <Text style={styles.rowLabel}>{label}</Text>
-      <View style={styles.rowEnd}>
-        {extra ? (
-          <Text style={styles.rowExtra} numberOfLines={1}>
-            {extra}
-          </Text>
-        ) : null}
-        {showArrow && (
-          <IconOutline name="right" size={14} color={Colors.textPlaceholder} style={styles.arrow} />
-        )}
-      </View>
-      {!isLast && <View style={styles.rowDivider} />}
-    </Pressable>
-  );
-}
 
 export default function ProfileScreen() {
   const { state, logout, updateCurrentUser, fetchConversations, fetchUsers } = useAppContext();
@@ -100,20 +64,30 @@ export default function ProfileScreen() {
     ]);
   }, [logout]);
 
+  const renderItemLabel = (icon: string, bg: string, color: string, label: string) => (
+    <View style={styles.listItemRow}>
+      <View style={[styles.iconBox, { backgroundColor: bg }]}>
+        <IconOutline name={icon as any} size={16} color={color} />
+      </View>
+      <Text style={styles.listItemText}>{label}</Text>
+    </View>
+  );
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
       <View style={styles.heroCard}>
         <View style={styles.heroDecoration} />
         <View style={styles.heroContent}>
           <View style={styles.avatarRing}>
-            <Avatar uri={user?.avatar} name={user?.name} size={68} />
+            <Avatar uri={user?.avatar} name={user?.name} size={64} />
           </View>
           <View style={styles.heroInfo}>
-            <Text style={styles.heroName}>{user?.name || '未登录'}</Text>
-            <View style={styles.phoneRow}>
-              <IconOutline name="phone" size={12} color={Colors.white} />
-              <Text style={styles.heroPhone}>{user?.phone || ''}</Text>
-            </View>
+            <Text style={styles.heroName} numberOfLines={1}>
+              {user?.name || '未登录'}
+            </Text>
+            <Text style={styles.heroPhone} numberOfLines={1}>
+              {user?.phone || ''}
+            </Text>
           </View>
           <Pressable onPress={handleQRCode} style={styles.qrIconBtn}>
             <IconOutline name="qrcode" size={20} color={Colors.white} />
@@ -121,55 +95,40 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      <View style={styles.card}>
-        <Row
-          icon="user"
-          iconBg={Colors.primarySoft}
-          iconColor={Colors.primary}
-          label="昵称"
-          extra={user?.name || ''}
-          onPress={handleEditName}
-          showArrow
-        />
-        <Row
-          icon="phone"
-          iconBg={Colors.successSoft}
-          iconColor={Colors.success}
-          label="手机号"
-          extra={user?.phone || ''}
-        />
-        <Row
-          icon="qrcode"
-          iconBg={Colors.warningSoft}
-          iconColor={Colors.warning}
-          label="二维码名片"
-          onPress={handleQRCode}
-          showArrow
-          isLast
-        />
+      <View style={styles.section}>
+        <List>
+          <List.Item
+            extra={user?.name || ''}
+            arrow="horizontal"
+            onPress={handleEditName}>
+            {renderItemLabel('user', Colors.primarySoft, Colors.primary, '昵称')}
+          </List.Item>
+          <List.Item extra={user?.phone || ''}>
+            {renderItemLabel('phone', Colors.successSoft, Colors.success, '手机号')}
+          </List.Item>
+          <List.Item arrow="horizontal" onPress={handleQRCode}>
+            {renderItemLabel('qrcode', Colors.warningSoft, Colors.warning, '二维码名片')}
+          </List.Item>
+        </List>
       </View>
 
-      <View style={styles.card}>
-        <Row
-          icon="setting"
-          iconBg={Colors.primarySoft}
-          iconColor={Colors.primary}
-          label="设置"
-          showArrow
-        />
-        <Row
-          icon="info-circle"
-          iconBg={Colors.successSoft}
-          iconColor={Colors.success}
-          label="关于"
-          showArrow
-          isLast
-        />
+      <View style={styles.section}>
+        <List>
+          <List.Item arrow="horizontal">
+            {renderItemLabel('setting', Colors.primarySoft, Colors.primary, '设置')}
+          </List.Item>
+          <List.Item arrow="horizontal">
+            {renderItemLabel('info-circle', Colors.successSoft, Colors.success, '关于')}
+          </List.Item>
+        </List>
       </View>
 
-      <Pressable onPress={handleLogout} style={({ pressed }) => [styles.logoutBtn, pressed && styles.logoutPressed]}>
-        <Text style={styles.logoutText}>退出登录</Text>
-      </Pressable>
+      <Button
+        type="warning"
+        onPress={handleLogout}
+        style={styles.logoutButton}>
+        退出登录
+      </Button>
     </ScrollView>
   );
 }
@@ -219,16 +178,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: Spacing.xs,
   },
-  phoneRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-  },
   heroPhone: {
     fontSize: FontSize.sm,
     color: Colors.white,
     opacity: 0.9,
-    marginLeft: Spacing.xs,
   },
   qrIconBtn: {
     width: 36,
@@ -238,75 +191,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  card: {
+  section: {
     marginHorizontal: Spacing.lg,
-    marginBottom: Spacing.lg,
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.xl,
+    marginBottom: Spacing.md,
+    borderRadius: BorderRadius.lg,
     overflow: 'hidden',
-    ...Shadows.sm,
+    backgroundColor: Colors.surface,
   },
-  row: {
+  listItemRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    minHeight: 56,
-    position: 'relative',
-  },
-  rowPressed: {
-    backgroundColor: Colors.surfaceAlt,
   },
   iconBox: {
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
     borderRadius: BorderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: Spacing.md,
   },
-  rowLabel: {
-    flex: 1,
+  listItemText: {
     fontSize: FontSize.md,
     color: Colors.textPrimary,
-    fontWeight: '500',
   },
-  rowEnd: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    maxWidth: '50%',
-  },
-  rowExtra: {
-    fontSize: FontSize.md,
-    color: Colors.textHint,
-  },
-  arrow: {
-    marginLeft: Spacing.sm,
-  },
-  rowDivider: {
-    position: 'absolute',
-    left: Spacing.lg + 32 + Spacing.md,
-    right: 0,
-    bottom: 0,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: Colors.borderLight,
-  },
-  logoutBtn: {
+  logoutButton: {
+    marginTop: Spacing.xl,
     marginHorizontal: Spacing.lg,
-    marginTop: Spacing.md,
-    height: 50,
+    height: 48,
     borderRadius: BorderRadius.round,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...Shadows.sm,
-  },
-  logoutPressed: {
-    backgroundColor: Colors.dangerSoft,
-  },
-  logoutText: {
-    fontSize: FontSize.lg,
-    color: Colors.danger,
-    fontWeight: '600',
   },
 });
