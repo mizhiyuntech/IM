@@ -8,6 +8,7 @@ import LoginScreen from '../screens/Login/LoginScreen';
 import RegisterScreen from '../screens/Register/RegisterScreen';
 import AddFriendScreen from '../screens/AddFriend/AddFriendScreen';
 import CreateGroupScreen from '../screens/CreateGroup/CreateGroupScreen';
+import GroupSettingsScreen from '../screens/GroupSettings/GroupSettingsScreen';
 import ContactDetailScreen from '../screens/ContactDetail/ContactDetailScreen';
 import ChatListScreen from '../screens/ChatList/ChatListScreen';
 import ChatScreen from '../screens/Chat/ChatScreen';
@@ -28,6 +29,10 @@ export type RootStackParamList = {
   };
   AddFriend: undefined;
   CreateGroup: undefined;
+  GroupSettings: {
+    groupId: string;
+    conversationId: string;
+  };
   ContactDetail: {
     userId: string;
     userName: string;
@@ -162,6 +167,18 @@ export default function AppNavigator() {
               options={{
                 headerShown: true,
                 headerTitle: '创建群聊',
+                headerTitleStyle: styles.headerTitle,
+                headerTintColor: Colors.textPrimary,
+                headerStyle: { backgroundColor: Colors.white },
+                headerShadowVisible: false,
+              }}
+            />
+            <Stack.Screen
+              name="GroupSettings"
+              component={GroupSettingsScreen}
+              options={{
+                headerShown: true,
+                headerTitle: '群设置',
                 headerTitleStyle: styles.headerTitle,
                 headerTintColor: Colors.textPrimary,
                 headerStyle: { backgroundColor: Colors.white },

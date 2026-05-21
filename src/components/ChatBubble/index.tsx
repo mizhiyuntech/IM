@@ -69,9 +69,8 @@ function ChatBubble({ message, conversationType, groupId }: ChatBubbleProps) {
           styles.bubble,
           isSelf ? styles.bubbleSelf : styles.bubbleOther,
         ]}>
-        {!isSelf && (
+        {!isSelf && conversationType === 'group' && (
           <View style={styles.senderRow}>
-            <Text style={styles.senderName}>{sender?.name || ''}</Text>
             {renderRoleTag()}
           </View>
         )}
@@ -121,11 +120,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: Spacing.xs,
-  },
-  senderName: {
-    fontSize: FontSize.xs,
-    color: Colors.textHint,
-    marginRight: Spacing.xs,
   },
   roleTag: {
     paddingHorizontal: 4,

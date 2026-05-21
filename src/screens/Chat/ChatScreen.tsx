@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useLayoutEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -11,8 +11,9 @@ import { Colors, Spacing, BorderRadius } from '../../theme';
 import { useAppContext } from '../../context/AppContext';
 import { Message } from '../../types';
 import ChatBubble from '../../components/ChatBubble';
-import { useRoute } from '@react-navigation/native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import { RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation';
 import { Input } from '@ant-design/react-native';
 import { IconOutline } from '@ant-design/icons-react-native';
@@ -20,14 +21,30 @@ import { api } from '../../services/api';
 import { addWSHandler, removeWSHandler } from '../../services/websocket';
 
 type ChatRouteProp = RouteProp<RootStackParamList, 'Chat'>;
+type ChatNavProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function ChatScreen() {
   const route = useRoute<ChatRouteProp>();
+  const navigation = useNavigation<ChatNavProp>();
   const { conversationId, conversationType, groupId } = route.params;
   const { sendMessage, setActiveConversationId, markAsRead } = useAppContext();
   const [inputText, setInputText] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const flatListRef = useRef<FlatList>(null);
+
+  useLayoutEffect(() => {
+    if (conversationType === 'group' && groupId) {
+      navigation.setOptions({
+        headerRight: () => (
+          <Pressable
+            onPress={() => navigation.navigate('GroupSettings', { groupId, conversationId })}
+            style={styles.headerRightBtn}>
+            <IconOutline name="setting" size={22} color={Colors.textPrimary} />
+          </Pressable>
+        ),
+      });
+    }
+  }, [navigation, conversationType, groupId, conversationId]);
 
   const fetchMessages = useCallback(async () => {
     try {
@@ -178,5 +195,8 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: Colors.border,
+  },
+  headerRightBtn: {
+    marginRight: 12,
   },
 });

@@ -130,6 +130,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
   const appStateRef = useRef(RNAppState.currentState);
   const [activeConversationId, setActiveConversationId] = React.useState<string | null>(null);
+  const activeConvRef = useRef<string | null>(null);
+  const usersRef = useRef<User[]>([]);
+  const isLoggedInRef = useRef(false);
+
+  const setActiveConvId = useCallback((id: string | null) => {
+    activeConvRef.current = id;
+    setActiveConversationId(id);
+  }, []);
+
+  usersRef.current = state.users;
+  isLoggedInRef.current = state.isLoggedIn;
 
   const restoreSession = useCallback(async () => {
     try {
@@ -292,8 +303,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         payload: { conversationId: message.conversationId, message },
       });
 
-      if (message.conversationId !== activeConversationId) {
-        const senderName = state.users.find(u => u.id === message.senderId)?.name || '用户';
+      if (message.conversationId !== activeConvRef.current) {
+        const senderName = usersRef.current.find(u => u.id === message.senderId)?.name || '用户';
         showNotification(senderName, message.content);
       }
     } else if (msg.type === 'friend_added' && msg.data) {
@@ -302,8 +313,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       fetchConversations();
     } else if (msg.type === 'new_conversation' && msg.data) {
       fetchConversations();
+    } else if (msg.type === 'group_dissolved' && msg.data) {
+      showNotification('群聊已解散', `${msg.data.name} 已被群主解散`);
+      fetchConversations();
     }
-  }, [state.users, fetchUsers, fetchConversations, activeConversationId]);
+  }, [fetchUsers, fetchConversations]);
 
   useEffect(() => {
     initNotification();
@@ -317,14 +331,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const sub = RNAppState.addEventListener('change', nextAppState => {
       if (appStateRef.current.match(/inactive|background/) && nextAppState === 'active') {
-        if (state.isLoggedIn) {
+        if (isLoggedInRef.current) {
           fetchConversations();
         }
       }
       appStateRef.current = nextAppState;
     });
     return () => sub.remove();
-  }, [state.isLoggedIn, fetchConversations]);
+  }, [fetchConversations]);
 
   useEffect(() => {
     addWSHandler(onWSMessage);
@@ -349,7 +363,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         getUserById,
         onWSMessage,
         activeConversationId,
-        setActiveConversationId,
+        setActiveConversationId: setActiveConvId,
       }}>
       {children}
     </AppContext.Provider>

@@ -64,8 +64,11 @@ func Setup(r *gin.Engine, db *gorm.DB, cfg *config.Config, hub *ws.Hub) {
 			{
 				groups.POST("", groupHandler.CreateGroup)
 				groups.GET("/:id", groupHandler.GetGroupInfo)
+				groups.PUT("/:id", groupHandler.UpdateGroup)
+				groups.DELETE("/:id", groupHandler.DissolveGroup)
 				groups.GET("/:id/members", groupHandler.GetGroupMembers)
 				groups.PUT("/:id/members/:userId/role", groupHandler.SetMemberRole)
+				groups.POST("/:id/leave", groupHandler.LeaveGroup)
 			}
 		}
 	}

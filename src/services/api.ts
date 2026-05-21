@@ -216,4 +216,22 @@ export const api = {
       body: JSON.stringify({ role }),
     });
   },
+
+  updateGroup(
+    groupId: string,
+    name: string,
+  ): Promise<{ message: string }> {
+    return request(`/groups/${groupId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ name }),
+    });
+  },
+
+  dissolveGroup(groupId: string): Promise<{ message: string }> {
+    return request(`/groups/${groupId}`, { method: 'DELETE' });
+  },
+
+  leaveGroup(groupId: string): Promise<{ message: string }> {
+    return request(`/groups/${groupId}/leave`, { method: 'POST' });
+  },
 };

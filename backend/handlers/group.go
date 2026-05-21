@@ -115,9 +115,9 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"group":         group,
-		"conversation":  conv,
-		"member_count":  len(allMembers),
+		"group":        group,
+		"conversation": conv,
+		"member_count": len(allMembers),
 	})
 }
 
@@ -234,4 +234,130 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 		"member_count": memberCount,
 		"created_at":   group.CreatedAt,
 	})
+}
+
+type UpdateGroupRequest struct {
+	Name string `json:"name"`
+}
+
+func (h *GroupHandler) UpdateGroup(c *gin.Context) {
+	userID := c.GetString("userID")
+	groupID := c.Param("id")
+
+	var req UpdateGroupRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请求参数无效"})
+		return
+	}
+
+	if req.Name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "群名称不能为空"})
+		return
+	}
+
+	var group models.Group
+	if err := h.DB.First(&group, "id = ?", groupID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "群组不存在"})
+		return
+	}
+
+	var callerMember models.GroupMember
+	if err := h.DB.Where("group_id = ? AND user_id = ?", groupID, userID).First(&callerMember).Error; err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": "你不是该群成员"})
+		return
+	}
+
+	if callerMember.Role != "owner" && callerMember.Role != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "只有群主或管理员才能修改群名称"})
+		return
+	}
+
+	h.DB.Model(&models.Group{}).Where("id = ?", groupID).Update("name", req.Name)
+
+	var conv models.Conversation
+	if err := h.DB.First(&conv, "group_id = ?", groupID).Error; err == nil {
+		h.DB.Model(&models.Conversation{}).Where("id = ?", conv.ID).Update("name", req.Name)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "ok"})
+}
+
+func (h *GroupHandler) DissolveGroup(c *gin.Context) {
+	userID := c.GetString("userID")
+	groupID := c.Param("id")
+
+	var group models.Group
+	if err := h.DB.First(&group, "id = ?", groupID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "群组不存在"})
+		return
+	}
+
+	if group.OwnerID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "只有群主才能解散群聊"})
+		return
+	}
+
+	var conv models.Conversation
+	if err := h.DB.First(&conv, "group_id = ?", groupID).Error; err == nil {
+		h.DB.Where("conversation_id = ?", conv.ID).Delete(&models.ConversationMember{})
+		h.DB.Delete(&conv)
+	}
+
+	var members []models.GroupMember
+	h.DB.Where("group_id = ?", groupID).Find(&members)
+
+	memberIDs := make([]string, len(members))
+	for i, m := range members {
+		memberIDs[i] = m.UserID
+	}
+
+	h.DB.Where("group_id = ?", groupID).Delete(&models.GroupMember{})
+	h.DB.Delete(&group)
+
+	if h.Hub != nil {
+		for _, mid := range memberIDs {
+			if mid != userID {
+				h.Hub.SendToUser(mid, ws.WSMessage{
+					Type: "group_dissolved",
+					Data: map[string]string{
+						"group_id": groupID,
+						"name":     group.Name,
+					},
+				})
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "ok"})
+}
+
+func (h *GroupHandler) LeaveGroup(c *gin.Context) {
+	userID := c.GetString("userID")
+	groupID := c.Param("id")
+
+	var group models.Group
+	if err := h.DB.First(&group, "id = ?", groupID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "群组不存在"})
+		return
+	}
+
+	if group.OwnerID == userID {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "群主不能退出群聊，请先转让群主或解散群聊"})
+		return
+	}
+
+	var member models.GroupMember
+	if err := h.DB.Where("group_id = ? AND user_id = ?", groupID, userID).First(&member).Error; err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": "你不是该群成员"})
+		return
+	}
+
+	h.DB.Delete(&member)
+
+	var conv models.Conversation
+	if err := h.DB.First(&conv, "group_id = ?", groupID).Error; err == nil {
+		h.DB.Where("conversation_id = ? AND user_id = ?", conv.ID, userID).Delete(&models.ConversationMember{})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "ok"})
 }
