@@ -5,12 +5,11 @@ import {
   StyleSheet,
   Pressable,
 } from 'react-native';
-import { Colors, Spacing, FontSize } from '../../theme';
+import { Colors, Spacing, FontSize, BorderRadius } from '../../theme';
 import { Conversation } from '../../types';
 import { formatTime } from '../../utils';
-import { Badge, List } from '@ant-design/react-native';
 import Avatar from '../Avatar';
-import { IconOutline } from '@ant-design/icons-react-native';
+import { IconFill } from '@ant-design/icons-react-native';
 
 interface ConversationItemProps {
   conversation: Conversation;
@@ -31,71 +30,131 @@ function ConversationItem({
     onLongPress?.(conversation);
   }, [onLongPress, conversation]);
 
+  const unread = conversation.unreadCount > 0;
+  const unreadLabel =
+    conversation.unreadCount > 99 ? '99+' : String(conversation.unreadCount);
+
   return (
     <Pressable
       onPress={handlePress}
       onLongPress={handleLongPress}
       style={({ pressed }) => [styles.wrapper, pressed && styles.pressed]}>
-      <List.Item
-        thumb={<Avatar uri={conversation.avatar} name={conversation.name} size={48} />}
-        extra={
-          <View style={styles.extra}>
-            <Text style={styles.time}>{formatTime(conversation.updatedAt)}</Text>
-            {conversation.unreadCount > 0 && (
-              <Badge text={String(conversation.unreadCount)} />
-            )}
+      <View style={styles.avatarWrap}>
+        <Avatar uri={conversation.avatar} name={conversation.name} size={50} />
+        {unread && (
+          <View
+            style={[
+              styles.badge,
+              conversation.unreadCount > 9 && styles.badgeWide,
+            ]}>
+            <Text style={styles.badgeText}>{unreadLabel}</Text>
           </View>
-        }
-        multipleLine
-        arrow="">
-        <View style={styles.nameRow}>
-          {conversation.type === 'group' && (
-            <IconOutline name="team" size={14} color={Colors.textSecondary} style={styles.groupIcon} />
-          )}
-          <Text style={styles.name} numberOfLines={1}>
-            {conversation.name}
-          </Text>
+        )}
+      </View>
+
+      <View style={styles.content}>
+        <View style={styles.topRow}>
+          <View style={styles.nameRow}>
+            {conversation.type === 'group' && (
+              <View style={styles.groupTag}>
+                <IconFill name="team" size={10} color={Colors.primary} />
+              </View>
+            )}
+            <Text style={styles.name} numberOfLines={1}>
+              {conversation.name}
+            </Text>
+          </View>
+          <Text style={styles.time}>{formatTime(conversation.updatedAt)}</Text>
         </View>
-        <Text style={styles.lastMessage} numberOfLines={1}>
-          {conversation.lastMessage}
+        <Text
+          style={[styles.lastMessage, unread && styles.lastMessageUnread]}
+          numberOfLines={1}>
+          {conversation.lastMessage || '暂无消息'}
         </Text>
-      </List.Item>
+      </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   wrapper: {
-    backgroundColor: Colors.white,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
   },
   pressed: {
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.surfaceAlt,
+  },
+  avatarWrap: {
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 5,
+    borderRadius: 9,
+    backgroundColor: Colors.danger,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: Colors.surface,
+  },
+  badgeWide: {
+    minWidth: 22,
+  },
+  badgeText: {
+    color: Colors.white,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  content: {
+    flex: 1,
+    marginLeft: Spacing.md,
+    justifyContent: 'center',
+    minHeight: 50,
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
   },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+    marginRight: Spacing.sm,
   },
-  groupIcon: {
+  groupTag: {
+    width: 18,
+    height: 18,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: Colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: Spacing.xs,
   },
   name: {
     fontSize: FontSize.lg,
     color: Colors.textPrimary,
-    fontWeight: '500',
-  },
-  lastMessage: {
-    fontSize: FontSize.md,
-    color: Colors.textHint,
-    marginTop: Spacing.xs,
-  },
-  extra: {
-    alignItems: 'flex-end',
-    justifyContent: 'flex-start',
-    gap: Spacing.xs,
+    fontWeight: '600',
+    flexShrink: 1,
   },
   time: {
+    fontSize: FontSize.xs,
+    color: Colors.textHint,
+  },
+  lastMessage: {
     fontSize: FontSize.sm,
     color: Colors.textHint,
+  },
+  lastMessageUnread: {
+    color: Colors.textSecondary,
   },
 });
 

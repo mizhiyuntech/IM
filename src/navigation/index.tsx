@@ -75,7 +75,9 @@ const tabScreenOptions = ({
       );
     }
     if (route.name === 'Profile') {
-      return (
+      return focused ? (
+        <IconFill name="user" size={iconSize} color={iconColor} />
+      ) : (
         <IconOutline name="user" size={iconSize} color={iconColor} />
       );
     }
@@ -208,17 +210,21 @@ export default function AppNavigator() {
 
 const styles = StyleSheet.create({
   tabLabel: {
-    fontSize: FontSize.sm,
+    fontSize: FontSize.xs,
+    fontWeight: '500',
+    marginTop: 2,
   },
   tabBar: {
-    paddingBottom: Spacing.xs,
-    height: 56,
-    borderTopColor: Colors.border,
+    paddingTop: Spacing.xs,
+    paddingBottom: Spacing.sm,
+    height: 62,
+    backgroundColor: Colors.white,
+    borderTopColor: Colors.borderLight,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   headerTitle: {
     fontSize: FontSize.lg,
     color: Colors.textPrimary,
-    fontWeight: '500',
+    fontWeight: '600',
   },
 });
