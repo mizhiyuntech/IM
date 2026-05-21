@@ -5,6 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Colors, Spacing, FontSize } from '../theme';
 import { useAppContext } from '../context/AppContext';
 import LoginScreen from '../screens/Login/LoginScreen';
+import RegisterScreen from '../screens/Register/RegisterScreen';
 import ChatListScreen from '../screens/ChatList/ChatListScreen';
 import ChatScreen from '../screens/Chat/ChatScreen';
 import ContactsScreen from '../screens/Contacts/ContactsScreen';
@@ -14,6 +15,7 @@ import { IconOutline, IconFill } from '@ant-design/icons-react-native';
 
 export type RootStackParamList = {
   Login: undefined;
+  Register: undefined;
   MainTabs: undefined;
   Chat: { conversationId: string; conversationName: string };
 };
@@ -95,7 +97,10 @@ export default function AppNavigator() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!state.isLoggedIn ? (
-          <Stack.Screen name="Login" component={LoginScreen} />
+          <>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
+          </>
         ) : (
           <>
             <Stack.Screen name="MainTabs" component={MainTabs} />

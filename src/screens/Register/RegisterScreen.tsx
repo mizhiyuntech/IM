@@ -1,37 +1,44 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
   Alert,
-  Pressable,
 } from 'react-native';
 import { Button, Input, WhiteSpace } from '@ant-design/react-native';
-import { Colors, Spacing, FontSize, BorderRadius } from '../../theme';
+import { Colors, Spacing, BorderRadius } from '../../theme';
 import { useAppContext } from '../../context/AppContext';
 import { IconOutline } from '@ant-design/icons-react-native';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../navigation';
+import { api } from '../../services/api';
 
-type LoginNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
-
-export default function LoginScreen() {
+export default function RegisterScreen() {
   const { login } = useAppContext();
-  const navigation = useNavigation<LoginNavigationProp>();
+  const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
-    if (!phone || !password) return;
+  const handleRegister = async () => {
+    if (!name || !phone || !password || !confirmPassword) return;
+
+    if (password !== confirmPassword) {
+      Alert.alert('注册失败', '两次输入的密码不一致');
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert('注册失败', '密码长度不能少于6位');
+      return;
+    }
+
     setLoading(true);
     try {
+      await api.register(phone, password, name);
       await login(phone, password);
     } catch (e: any) {
-      Alert.alert('登录失败', e.message || '请检查手机号和密码');
+      Alert.alert('注册失败', e.message || '请检查输入信息');
     } finally {
       setLoading(false);
     }
@@ -43,13 +50,21 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.header}>
         <View style={styles.logoContainer}>
-          <IconOutline name="message" size={36} color={Colors.white} />
+          <IconOutline name="user-add" size={36} color={Colors.white} />
         </View>
         <WhiteSpace size="lg" />
-        <WhiteSpace size="sm" />
       </View>
 
       <View style={styles.form}>
+        <Input
+          value={name}
+          onChangeText={setName}
+          placeholder="请输入昵称"
+          maxLength={20}
+          style={styles.input}
+          clearButtonMode="while-editing"
+        />
+        <WhiteSpace size="lg" />
         <Input
           value={phone}
           onChangeText={setPhone}
@@ -63,7 +78,16 @@ export default function LoginScreen() {
         <Input
           value={password}
           onChangeText={setPassword}
-          placeholder="请输入密码"
+          placeholder="请输入密码（至少6位）"
+          secureTextEntry
+          style={styles.input}
+          clearButtonMode="while-editing"
+        />
+        <WhiteSpace size="lg" />
+        <Input
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          placeholder="请确认密码"
           secureTextEntry
           style={styles.input}
           clearButtonMode="while-editing"
@@ -71,17 +95,12 @@ export default function LoginScreen() {
         <WhiteSpace size="xl" />
         <Button
           type="primary"
-          onPress={handleLogin}
+          onPress={handleRegister}
           loading={loading}
-          disabled={!phone || !password}
-          style={styles.loginButton}>
-          登录
+          disabled={!name || !phone || !password || !confirmPassword}
+          style={styles.registerButton}>
+          注册
         </Button>
-        <Pressable
-          onPress={() => navigation.navigate('Register')}
-          style={styles.registerLink}>
-          <Text style={styles.registerText}>没有账号？去注册</Text>
-        </Pressable>
       </View>
     </KeyboardAvoidingView>
   );
@@ -95,8 +114,8 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    paddingTop: 80,
-    paddingBottom: Spacing.xxl,
+    paddingTop: 60,
+    paddingBottom: Spacing.xl,
   },
   logoContainer: {
     width: 72,
@@ -108,23 +127,14 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   form: {
-    marginTop: Spacing.xl,
+    marginTop: Spacing.lg,
   },
   input: {
     marginBottom: Spacing.lg,
   },
-  loginButton: {
+  registerButton: {
     marginTop: Spacing.md,
     height: 48,
     borderRadius: BorderRadius.round,
-  },
-  registerLink: {
-    marginTop: Spacing.lg,
-    alignItems: 'center',
-    paddingVertical: Spacing.sm,
-  },
-  registerText: {
-    fontSize: FontSize.md,
-    color: Colors.primary,
   },
 });
