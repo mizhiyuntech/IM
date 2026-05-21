@@ -128,54 +128,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
   const appStateRef = useRef(RNAppState.currentState);
 
-  useEffect(() => {
-    initNotification();
-    requestNotificationPermission();
-  }, []);
-
-  useEffect(() => {
-    const sub = RNAppState.addEventListener('change', nextAppState => {
-      if (appStateRef.current.match(/inactive|background/) && nextAppState === 'active') {
-        if (state.isLoggedIn) {
-          fetchConversations();
-        }
-      }
-      appStateRef.current = nextAppState;
-    });
-    return () => sub.remove();
-  }, [state.isLoggedIn, fetchConversations]);
-
-  const onWSMessage = useCallback((msg: any) => {
-    if (msg.type === 'new_message' && msg.data) {
-      const wsMsg = msg.data;
-      const message: Message = {
-        id: wsMsg.id,
-        conversationId: wsMsg.conversation_id,
-        senderId: wsMsg.sender_id,
-        content: wsMsg.content,
-        type: wsMsg.type || 'text',
-        createdAt: wsMsg.created_at,
-      };
-
-      dispatch({
-        type: 'ADD_MESSAGE',
-        payload: { conversationId: message.conversationId, message },
-      });
-
-      const senderName = state.users.find(u => u.id === message.senderId)?.name || '用户';
-      showNotification(senderName, message.content);
-    }
-  }, [state.users]);
-
-  useEffect(() => {
-    setWSHandler(onWSMessage);
-  }, [onWSMessage]);
-
-  useEffect(() => {
-    restoreSession();
-  }, []);
-
-  const restoreSession = async () => {
+  const restoreSession = useCallback(async () => {
     try {
       const savedToken = await AsyncStorage.getItem(STORAGE_KEY_TOKEN);
       const savedUser = await AsyncStorage.getItem(STORAGE_KEY_USER);
@@ -210,7 +163,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } finally {
       dispatch({ type: 'RESTORE_DONE' });
     }
-  };
+  }, []);
 
   const login = useCallback(async (phone: string, password: string) => {
     dispatch({ type: 'SET_LOADING', payload: true });
@@ -317,6 +270,53 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     [state.currentUser, state.users],
   );
+
+  const onWSMessage = useCallback((msg: any) => {
+    if (msg.type === 'new_message' && msg.data) {
+      const wsMsg = msg.data;
+      const message: Message = {
+        id: wsMsg.id,
+        conversationId: wsMsg.conversation_id,
+        senderId: wsMsg.sender_id,
+        content: wsMsg.content,
+        type: wsMsg.type || 'text',
+        createdAt: wsMsg.created_at,
+      };
+
+      dispatch({
+        type: 'ADD_MESSAGE',
+        payload: { conversationId: message.conversationId, message },
+      });
+
+      const senderName = state.users.find(u => u.id === message.senderId)?.name || '用户';
+      showNotification(senderName, message.content);
+    }
+  }, [state.users]);
+
+  useEffect(() => {
+    initNotification();
+    requestNotificationPermission();
+  }, []);
+
+  useEffect(() => {
+    restoreSession();
+  }, [restoreSession]);
+
+  useEffect(() => {
+    const sub = RNAppState.addEventListener('change', nextAppState => {
+      if (appStateRef.current.match(/inactive|background/) && nextAppState === 'active') {
+        if (state.isLoggedIn) {
+          fetchConversations();
+        }
+      }
+      appStateRef.current = nextAppState;
+    });
+    return () => sub.remove();
+  }, [state.isLoggedIn, fetchConversations]);
+
+  useEffect(() => {
+    setWSHandler(onWSMessage);
+  }, [onWSMessage]);
 
   if (state.restoring) {
     return null;
