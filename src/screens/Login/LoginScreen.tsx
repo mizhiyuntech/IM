@@ -4,6 +4,7 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { Button, Input, WhiteSpace } from '@ant-design/react-native';
 import { Colors, Spacing, BorderRadius } from '../../theme';
@@ -16,13 +17,16 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!phone || !password) return;
     setLoading(true);
-    setTimeout(() => {
-      login(phone, password);
+    try {
+      await login(phone, password);
+    } catch (e: any) {
+      Alert.alert('登录失败', e.message || '请检查手机号和密码');
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   };
 
   return (

@@ -16,17 +16,38 @@ import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation';
 import { Input } from '@ant-design/react-native';
 import { IconOutline } from '@ant-design/icons-react-native';
+import { api } from '../../services/api';
 
 type ChatRouteProp = RouteProp<RootStackParamList, 'Chat'>;
 
 export default function ChatScreen() {
   const route = useRoute<ChatRouteProp>();
   const { conversationId } = route.params;
-  const { getConversationMessages, sendMessage } = useAppContext();
+  const { sendMessage } = useAppContext();
   const [inputText, setInputText] = useState('');
+  const [messages, setMessages] = useState<Message[]>([]);
   const flatListRef = useRef<FlatList>(null);
 
-  const messages = getConversationMessages(conversationId);
+  const fetchMessages = useCallback(async () => {
+    try {
+      const res = await api.getMessages(conversationId);
+      const mapped: Message[] = res.data.map(m => ({
+        id: m.id,
+        conversationId: m.conversation_id,
+        senderId: m.sender_id,
+        content: m.content,
+        type: m.type as 'text',
+        createdAt: m.created_at,
+      }));
+      setMessages(mapped);
+    } catch {
+      // ignore
+    }
+  }, [conversationId]);
+
+  useEffect(() => {
+    fetchMessages();
+  }, [fetchMessages]);
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -36,12 +57,13 @@ export default function ChatScreen() {
     }
   }, [messages.length]);
 
-  const handleSend = useCallback(() => {
+  const handleSend = useCallback(async () => {
     const text = inputText.trim();
     if (!text) return;
-    sendMessage(conversationId, text);
     setInputText('');
-  }, [inputText, conversationId, sendMessage]);
+    await sendMessage(conversationId, text);
+    fetchMessages();
+  }, [inputText, conversationId, sendMessage, fetchMessages]);
 
   const renderItem = useCallback(
     ({ item }: { item: Message }) => <ChatBubble message={item} />,

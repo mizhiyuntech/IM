@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, SectionList, Pressable } from 'react-native';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../theme';
 import { useAppContext } from '../../context/AppContext';
@@ -12,14 +12,13 @@ interface SectionData {
 }
 
 export default function ContactsScreen() {
-  const { state } = useAppContext();
+  const { state, fetchUsers } = useAppContext();
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const sections = useMemo(() => {
-    const pinnedItems: SectionData = {
-      title: '',
-      data: [],
-    };
-
     const grouped: Record<string, User[]> = {};
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
@@ -33,10 +32,6 @@ export default function ContactsScreen() {
     });
 
     const result: SectionData[] = [];
-
-    if (pinnedItems.data.length > 0) {
-      result.push(pinnedItems);
-    }
 
     letters.forEach(letter => {
       if (grouped[letter] && grouped[letter].length > 0) {

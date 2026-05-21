@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { View, StyleSheet, FlatList, Alert } from 'react-native';
 import { Colors, Spacing } from '../../theme';
 import { useAppContext } from '../../context/AppContext';
@@ -11,8 +11,12 @@ import { RootStackParamList } from '../../navigation';
 type ChatListNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
 
 export default function ChatListScreen() {
-  const { state, markAsRead, deleteConversation } = useAppContext();
+  const { state, markAsRead, deleteConversation, fetchConversations } = useAppContext();
   const navigation = useNavigation<ChatListNavigationProp>();
+
+  useEffect(() => {
+    fetchConversations();
+  }, [fetchConversations]);
 
   const sortedConversations = [...state.conversations].sort(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),

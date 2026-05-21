@@ -1,76 +1,69 @@
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import { User, Conversation, Message } from '../types';
-import {
-  currentUser,
-  conversations as mockConversations,
-  messagesMap as mockMessagesMap,
-  users as mockUsers,
-  groups as mockGroups,
-} from '../mock/data';
-import { generateId } from '../utils';
+import React, { createContext, useContext, useReducer, useCallback, ReactNode } from 'react';
+import { User, Conversation } from '../types';
+import { api, setToken } from '../services/api';
 
 interface AppState {
   isLoggedIn: boolean;
   currentUser: User | null;
   conversations: Conversation[];
-  messagesMap: Record<string, Message[]>;
   users: User[];
-  groups: typeof mockGroups;
+  loading: boolean;
 }
 
 type Action =
-  | { type: 'LOGIN'; payload: User }
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'LOGIN'; payload: { user: User; token: string } }
   | { type: 'LOGOUT' }
-  | { type: 'SEND_MESSAGE'; payload: Message }
-  | { type: 'MARK_AS_READ'; payload: string }
-  | { type: 'DELETE_CONVERSATION'; payload: string };
+  | { type: 'SET_CONVERSATIONS'; payload: Conversation[] }
+  | { type: 'SET_USERS'; payload: User[] }
+  | { type: 'UPDATE_CONVERSATION'; payload: Conversation }
+  | { type: 'REMOVE_CONVERSATION'; payload: string }
+  | { type: 'MARK_AS_READ'; payload: string };
 
 const initialState: AppState = {
   isLoggedIn: false,
   currentUser: null,
-  conversations: mockConversations,
-  messagesMap: mockMessagesMap,
-  users: mockUsers,
-  groups: mockGroups,
+  conversations: [],
+  users: [],
+  loading: false,
 };
 
 function appReducer(state: AppState, action: Action): AppState {
   switch (action.type) {
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload };
     case 'LOGIN':
       return {
         ...state,
         isLoggedIn: true,
-        currentUser: action.payload,
+        currentUser: action.payload.user,
       };
     case 'LOGOUT':
       return {
         ...state,
         isLoggedIn: false,
         currentUser: null,
+        conversations: [],
+        users: [],
       };
-    case 'SEND_MESSAGE': {
-      const msg = action.payload;
-      const existingMessages = state.messagesMap[msg.conversationId] || [];
-      const updatedMessagesMap = {
-        ...state.messagesMap,
-        [msg.conversationId]: [...existingMessages, msg],
-      };
-      const updatedConversations = state.conversations.map(conv => {
-        if (conv.id === msg.conversationId) {
-          return {
-            ...conv,
-            lastMessage: msg.content,
-            updatedAt: msg.createdAt,
-          };
-        }
-        return conv;
-      });
+    case 'SET_CONVERSATIONS':
+      return { ...state, conversations: action.payload };
+    case 'SET_USERS':
+      return { ...state, users: action.payload };
+    case 'UPDATE_CONVERSATION':
       return {
         ...state,
-        messagesMap: updatedMessagesMap,
-        conversations: updatedConversations,
+        conversations: state.conversations.map(conv =>
+          conv.id === action.payload.id ? action.payload : conv,
+        ),
       };
-    }
+    case 'REMOVE_CONVERSATION':
+      return {
+        ...state,
+        conversations: state.conversations.filter(
+          conv => conv.id !== action.payload,
+        ),
+      };
     case 'MARK_AS_READ':
       return {
         ...state,
@@ -81,13 +74,6 @@ function appReducer(state: AppState, action: Action): AppState {
           return conv;
         }),
       };
-    case 'DELETE_CONVERSATION':
-      return {
-        ...state,
-        conversations: state.conversations.filter(
-          conv => conv.id !== action.payload,
-        ),
-      };
     default:
       return state;
   }
@@ -95,16 +81,14 @@ function appReducer(state: AppState, action: Action): AppState {
 
 interface AppContextType {
   state: AppState;
-  dispatch: React.Dispatch<Action>;
-  login: (phone: string, password: string) => void;
+  login: (phone: string, password: string) => Promise<void>;
   logout: () => void;
-  sendMessage: (conversationId: string, content: string) => void;
-  markAsRead: (conversationId: string) => void;
-  deleteConversation: (conversationId: string) => void;
-  getConversationMessages: (conversationId: string) => Message[];
-  getConversationById: (id: string) => Conversation | undefined;
+  fetchConversations: () => Promise<void>;
+  fetchUsers: () => Promise<void>;
+  sendMessage: (conversationId: string, content: string) => Promise<void>;
+  markAsRead: (conversationId: string) => Promise<void>;
+  deleteConversation: (conversationId: string) => Promise<void>;
   getUserById: (id: string) => User | undefined;
-  getGroupById: (id: string) => typeof mockGroups[0] | undefined;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -112,65 +96,117 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
-  const login = (_phone: string, _password: string) => {
-    dispatch({ type: 'LOGIN', payload: currentUser });
-  };
+  const login = useCallback(async (phone: string, password: string) => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    try {
+      const res = await api.login(phone, password);
+      setToken(res.token);
+      const user: User = {
+        id: res.user.id,
+        name: res.user.name,
+        avatar: res.user.avatar,
+        phone: res.user.phone,
+      };
+      dispatch({ type: 'LOGIN', payload: { user, token: res.token } });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
+    setToken(null);
     dispatch({ type: 'LOGOUT' });
-  };
+  }, []);
 
-  const sendMessage = (conversationId: string, content: string) => {
-    const msg: Message = {
-      id: generateId(),
-      conversationId,
-      senderId: state.currentUser?.id || 'user_001',
-      content,
-      type: 'text',
-      createdAt: new Date().toISOString(),
-    };
-    dispatch({ type: 'SEND_MESSAGE', payload: msg });
-  };
+  const fetchConversations = useCallback(async () => {
+    try {
+      const res = await api.getConversations();
+      const conversations: Conversation[] = res.map(item => ({
+        id: item.id,
+        type: item.type as 'private' | 'group',
+        name: item.name,
+        avatar: item.avatar,
+        lastMessage: item.last_message,
+        unreadCount: item.unread_count,
+        updatedAt: item.updated_at,
+      }));
+      dispatch({ type: 'SET_CONVERSATIONS', payload: conversations });
+    } catch {
+      // ignore
+    }
+  }, []);
 
-  const markAsRead = (conversationId: string) => {
+  const fetchUsers = useCallback(async () => {
+    try {
+      const res = await api.getUsers();
+      const users: User[] = res.map(item => ({
+        id: item.id,
+        name: item.name,
+        avatar: item.avatar,
+        phone: item.phone,
+      }));
+      dispatch({ type: 'SET_USERS', payload: users });
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const sendMessage = useCallback(
+    async (conversationId: string, content: string) => {
+      const res = await api.sendMessage(conversationId, content);
+      const conv = state.conversations.find(c => c.id === conversationId);
+      if (conv) {
+        dispatch({
+          type: 'UPDATE_CONVERSATION',
+          payload: {
+            ...conv,
+            lastMessage: res.content,
+            updatedAt: res.created_at,
+          },
+        });
+      }
+    },
+    [state.conversations],
+  );
+
+  const markAsRead = useCallback(async (conversationId: string) => {
     dispatch({ type: 'MARK_AS_READ', payload: conversationId });
-  };
+    try {
+      await api.markAsRead(conversationId);
+    } catch {
+      // ignore
+    }
+  }, []);
 
-  const deleteConversation = (conversationId: string) => {
-    dispatch({ type: 'DELETE_CONVERSATION', payload: conversationId });
-  };
+  const deleteConversation = useCallback(async (conversationId: string) => {
+    dispatch({ type: 'REMOVE_CONVERSATION', payload: conversationId });
+    try {
+      await api.deleteConversation(conversationId);
+    } catch {
+      // ignore
+    }
+  }, []);
 
-  const getConversationMessages = (conversationId: string): Message[] => {
-    return state.messagesMap[conversationId] || [];
-  };
-
-  const getConversationById = (id: string): Conversation | undefined => {
-    return state.conversations.find(conv => conv.id === id);
-  };
-
-  const getUserById = (id: string): User | undefined => {
-    if (id === state.currentUser?.id) return state.currentUser;
-    return state.users.find(u => u.id === id);
-  };
-
-  const getGroupById = (id: string) => {
-    return state.groups.find(g => g.id === id);
-  };
+  const getUserById = useCallback(
+    (id: string): User | undefined => {
+      if (id === state.currentUser?.id) return state.currentUser;
+      return state.users.find(u => u.id === id);
+    },
+    [state.currentUser, state.users],
+  );
 
   return (
     <AppContext.Provider
       value={{
         state,
-        dispatch,
         login,
         logout,
+        fetchConversations,
+        fetchUsers,
         sendMessage,
         markAsRead,
         deleteConversation,
-        getConversationMessages,
-        getConversationById,
         getUserById,
-        getGroupById,
       }}>
       {children}
     </AppContext.Provider>
