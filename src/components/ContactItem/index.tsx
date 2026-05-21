@@ -1,7 +1,8 @@
 import React, { memo, useCallback } from 'react';
-import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
-import { Colors, Spacing, FontSize, BorderRadius } from '../../theme';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { Colors, Spacing, FontSize } from '../../theme';
 import { User } from '../../types';
+import Avatar from '../Avatar';
 
 interface ContactItemProps {
   user: User;
@@ -17,7 +18,7 @@ function ContactItem({ user, onPress }: ContactItemProps) {
     <Pressable
       onPress={handlePress}
       style={({ pressed }) => [styles.container, pressed && styles.pressed]}>
-      <Image source={{ uri: user.avatar }} style={styles.avatar} />
+      <Avatar uri={user.avatar} name={user.name} size={44} />
       <View style={styles.info}>
         <Text style={styles.name}>{user.name}</Text>
         <Text style={styles.phone}>{user.phone}</Text>
@@ -38,12 +39,6 @@ const styles = StyleSheet.create({
   },
   pressed: {
     backgroundColor: Colors.background,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.border,
   },
   info: {
     marginLeft: Spacing.md,

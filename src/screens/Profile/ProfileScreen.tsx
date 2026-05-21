@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
-import { List } from '@ant-design/react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { List, Button } from '@ant-design/react-native';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../theme';
 import { useAppContext } from '../../context/AppContext';
 import { IconOutline } from '@ant-design/icons-react-native';
+import Avatar from '../../components/Avatar';
 
 export default function ProfileScreen() {
   const { state, logout } = useAppContext();
@@ -12,10 +13,7 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.profileHeader}>
-        <Image
-          source={{ uri: user?.avatar }}
-          style={styles.avatar}
-        />
+        <Avatar uri={user?.avatar} name={user?.name} size={64} />
         <View style={styles.profileInfo}>
           <Text style={styles.name}>{user?.name || '未登录'}</Text>
           <Text style={styles.phone}>{user?.phone || ''}</Text>
@@ -68,11 +66,12 @@ export default function ProfileScreen() {
         </List>
       </View>
 
-      <Pressable
-        style={styles.logoutButton}
-        onPress={logout}>
-        <Text style={styles.logoutText}>退出登录</Text>
-      </Pressable>
+      <Button
+        type="warning"
+        onPress={logout}
+        style={styles.logoutButton}>
+        退出登录
+      </Button>
     </View>
   );
 }
@@ -89,12 +88,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xl,
     backgroundColor: Colors.white,
     marginBottom: Spacing.md,
-  },
-  avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: BorderRadius.lg,
-    backgroundColor: Colors.border,
   },
   profileInfo: {
     marginLeft: Spacing.lg,
@@ -125,13 +118,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xl,
     marginHorizontal: Spacing.lg,
     height: 48,
-    backgroundColor: Colors.white,
-    borderRadius: BorderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoutText: {
-    fontSize: FontSize.lg,
-    color: Colors.danger,
+    borderRadius: BorderRadius.round,
   },
 });

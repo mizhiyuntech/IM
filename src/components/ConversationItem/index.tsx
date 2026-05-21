@@ -3,13 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
-  Image,
   Pressable,
 } from 'react-native';
-import { Colors, Spacing, FontSize, BorderRadius } from '../../theme';
+import { Colors, Spacing, FontSize } from '../../theme';
 import { Conversation } from '../../types';
 import { formatTime } from '../../utils';
 import { Badge } from '@ant-design/react-native';
+import Avatar from '../Avatar';
 
 interface ConversationItemProps {
   conversation: Conversation;
@@ -35,7 +35,7 @@ function ConversationItem({
       onPress={handlePress}
       onLongPress={handleLongPress}
       style={({ pressed }) => [styles.container, pressed && styles.pressed]}>
-      <Image source={{ uri: conversation.avatar }} style={styles.avatar} />
+      <Avatar uri={conversation.avatar} name={conversation.name} size={48} />
       <View style={styles.content}>
         <View style={styles.header}>
           <Text style={styles.name} numberOfLines={1}>
@@ -68,12 +68,6 @@ const styles = StyleSheet.create({
   },
   pressed: {
     backgroundColor: Colors.background,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.border,
   },
   content: {
     flex: 1,

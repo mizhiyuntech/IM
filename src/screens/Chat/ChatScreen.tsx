@@ -3,18 +3,18 @@ import {
   View,
   StyleSheet,
   FlatList,
-  TextInput,
   Pressable,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Colors, Spacing, FontSize, BorderRadius } from '../../theme';
+import { Colors, Spacing, BorderRadius } from '../../theme';
 import { useAppContext } from '../../context/AppContext';
 import { Message } from '../../types';
 import ChatBubble from '../../components/ChatBubble';
 import { useRoute } from '@react-navigation/native';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation';
+import { Input } from '@ant-design/react-native';
 import { IconOutline } from '@ant-design/icons-react-native';
 
 type ChatRouteProp = RouteProp<RootStackParamList, 'Chat'>;
@@ -66,20 +66,25 @@ export default function ChatScreen() {
         }
       />
       <View style={styles.inputBar}>
-        <TextInput
-          style={styles.input}
+        <Input
           value={inputText}
           onChangeText={setInputText}
           placeholder="输入消息..."
-          placeholderTextColor={Colors.textHint}
+          style={styles.input}
           multiline
           maxLength={500}
         />
         <Pressable
           onPress={handleSend}
-          style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
-          disabled={!inputText.trim()}>
-          <IconOutline name="send" size={18} color={Colors.white} />
+          style={[
+            styles.sendButton,
+            !inputText.trim() && styles.sendButtonDisabled,
+          ]}>
+          <IconOutline
+            name="send"
+            size={18}
+            color={inputText.trim() ? Colors.white : Colors.textHint}
+          />
         </Pressable>
       </View>
     </KeyboardAvoidingView>
@@ -105,21 +110,13 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    minHeight: 40,
-    maxHeight: 100,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    backgroundColor: Colors.background,
-    borderRadius: BorderRadius.md,
-    fontSize: FontSize.md,
-    color: Colors.textPrimary,
   },
   sendButton: {
     marginLeft: Spacing.sm,
     width: 40,
     height: 40,
     backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.round,
     alignItems: 'center',
     justifyContent: 'center',
   },

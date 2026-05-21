@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Button, Input } from '@ant-design/react-native';
-import { Colors, Spacing, FontSize, BorderRadius } from '../../theme';
+import { Button, Input, WhiteSpace } from '@ant-design/react-native';
+import { Colors, Spacing, BorderRadius } from '../../theme';
 import { useAppContext } from '../../context/AppContext';
 import { IconOutline } from '@ant-design/icons-react-native';
 
@@ -34,8 +33,8 @@ export default function LoginScreen() {
         <View style={styles.logoContainer}>
           <IconOutline name="message" size={36} color={Colors.white} />
         </View>
-        <Text style={styles.title}>即时通讯</Text>
-        <Text style={styles.subtitle}>登录以开始聊天</Text>
+        <WhiteSpace size="lg" />
+        <WhiteSpace size="sm" />
       </View>
 
       <View style={styles.form}>
@@ -48,6 +47,7 @@ export default function LoginScreen() {
           style={styles.input}
           clearButtonMode="while-editing"
         />
+        <WhiteSpace size="lg" />
         <Input
           value={password}
           onChangeText={setPassword}
@@ -56,6 +56,7 @@ export default function LoginScreen() {
           style={styles.input}
           clearButtonMode="while-editing"
         />
+        <WhiteSpace size="xl" />
         <Button
           type="primary"
           onPress={handleLogin}
@@ -64,10 +65,6 @@ export default function LoginScreen() {
           style={styles.loginButton}>
           登录
         </Button>
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>还没有账号？</Text>
-          <Text style={styles.registerLink}>注册</Text>
-        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -93,16 +90,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: Spacing.lg,
   },
-  title: {
-    fontSize: FontSize.xxl,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-    marginBottom: Spacing.xs,
-  },
-  subtitle: {
-    fontSize: FontSize.md,
-    color: Colors.textHint,
-  },
   form: {
     marginTop: Spacing.xl,
   },
@@ -112,20 +99,6 @@ const styles = StyleSheet.create({
   loginButton: {
     marginTop: Spacing.md,
     height: 48,
-    borderRadius: BorderRadius.md,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: Spacing.xl,
-  },
-  footerText: {
-    fontSize: FontSize.md,
-    color: Colors.textHint,
-  },
-  registerLink: {
-    fontSize: FontSize.md,
-    color: Colors.primary,
-    marginLeft: Spacing.xs,
+    borderRadius: BorderRadius.round,
   },
 });

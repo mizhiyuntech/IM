@@ -1,8 +1,9 @@
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../theme';
 import { Message } from '../../types';
 import { useAppContext } from '../../context/AppContext';
+import Avatar from '../Avatar';
 
 interface ChatBubbleProps {
   message: Message;
@@ -20,7 +21,7 @@ function ChatBubble({ message }: ChatBubbleProps) {
         isSelf ? styles.containerSelf : styles.containerOther,
       ]}>
       {!isSelf && (
-        <Image source={{ uri: sender?.avatar }} style={styles.avatar} />
+        <Avatar uri={sender?.avatar} name={sender?.name} size={36} />
       )}
       <View
         style={[
@@ -35,7 +36,7 @@ function ChatBubble({ message }: ChatBubbleProps) {
         </Text>
       </View>
       {isSelf && (
-        <Image source={{ uri: state.currentUser?.avatar }} style={styles.avatar} />
+        <Avatar uri={state.currentUser?.avatar} name={state.currentUser?.name} size={36} />
       )}
     </View>
   );
@@ -53,12 +54,6 @@ const styles = StyleSheet.create({
   },
   containerOther: {
     justifyContent: 'flex-start',
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.border,
   },
   bubble: {
     maxWidth: '70%',
