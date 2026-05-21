@@ -31,24 +31,24 @@ type RegisterRequest struct {
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请求参数无效"})
 		return
 	}
 
 	var user models.User
 	if err := h.DB.Where("phone = ?", req.Phone).First(&user).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "phone or password incorrect"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "手机号或密码错误"})
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "phone or password incorrect"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "手机号或密码错误"})
 		return
 	}
 
 	token, err := h.generateToken(user.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "generate token failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "生成令牌失败"})
 		return
 	}
 
@@ -61,24 +61,24 @@ func (h *AuthHandler) Login(c *gin.Context) {
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请求参数无效"})
 		return
 	}
 
 	if req.Phone == "" || req.Password == "" || req.Name == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "phone, password and name are required"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "手机号、密码和昵称不能为空"})
 		return
 	}
 
 	var existing models.User
 	if h.DB.Where("phone = ?", req.Phone).First(&existing).Error == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "phone already registered"})
+		c.JSON(http.StatusConflict, gin.H{"error": "该手机号已注册"})
 		return
 	}
 
 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "hash password failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "密码加密失败"})
 		return
 	}
 
@@ -90,13 +90,13 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 
 	if err := h.DB.Create(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "create user failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "创建用户失败"})
 		return
 	}
 
 	token, err := h.generateToken(user.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "generate token failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "生成令牌失败"})
 		return
 	}
 
@@ -111,7 +111,7 @@ func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
 
 	var user models.User
 	if err := h.DB.First(&user, "id = ?", userID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "用户不存在"})
 		return
 	}
 

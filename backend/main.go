@@ -10,6 +10,7 @@ import (
 	"im-backend/config"
 	"im-backend/models"
 	"im-backend/router"
+	"im-backend/ws"
 )
 
 func main() {
@@ -30,6 +31,8 @@ func main() {
 		&models.Contact{},
 	)
 
+	hub := ws.NewHub()
+
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
@@ -44,7 +47,7 @@ func main() {
 		c.Next()
 	})
 
-	router.Setup(r, db, cfg)
+	router.Setup(r, db, cfg, hub)
 
 	addr := fmt.Sprintf(":%s", cfg.ServerPort)
 	log.Printf("IM backend server starting on %s", addr)

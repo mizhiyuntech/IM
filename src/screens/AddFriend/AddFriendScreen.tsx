@@ -4,9 +4,8 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  Alert,
 } from 'react-native';
-import { Input, Button } from '@ant-design/react-native';
+import { Input, Button, Toast } from '@ant-design/react-native';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../theme';
 import { api } from '../../services/api';
 import { useAppContext } from '../../context/AppContext';
@@ -34,8 +33,11 @@ export default function AddFriendScreen() {
       const res = await api.searchUsers(q);
       const filtered = res.filter(u => u.id !== state.currentUser?.id);
       setResults(filtered);
+      if (filtered.length === 0) {
+        Toast.info({ content: '未找到相关用户', duration: 1.5 });
+      }
     } catch (e: any) {
-      Alert.alert('搜索失败', e.message);
+      Toast.fail({ content: e.message || '搜索失败', duration: 2 });
     } finally {
       setSearching(false);
     }
@@ -46,13 +48,13 @@ export default function AddFriendScreen() {
       setAddingId(userId);
       try {
         await api.addContact(userId);
-        Alert.alert('添加成功', '已添加为好友');
+        Toast.success({ content: '已添加为好友', duration: 1.5 });
         await fetchUsers();
       } catch (e: any) {
-        if (e.message.includes('already added')) {
-          Alert.alert('提示', '该用户已经是你的好友');
+        if (e.message.includes('已经是好友')) {
+          Toast.info({ content: '该用户已经是你的好友', duration: 1.5 });
         } else {
-          Alert.alert('添加失败', e.message);
+          Toast.fail({ content: e.message || '添加失败', duration: 2 });
         }
       } finally {
         setAddingId(null);

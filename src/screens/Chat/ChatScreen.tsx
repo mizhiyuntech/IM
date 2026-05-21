@@ -17,13 +17,14 @@ import { RootStackParamList } from '../../navigation';
 import { Input } from '@ant-design/react-native';
 import { IconOutline } from '@ant-design/icons-react-native';
 import { api } from '../../services/api';
+import { setWSHandler } from '../../services/websocket';
 
 type ChatRouteProp = RouteProp<RootStackParamList, 'Chat'>;
 
 export default function ChatScreen() {
   const route = useRoute<ChatRouteProp>();
   const { conversationId } = route.params;
-  const { sendMessage } = useAppContext();
+  const { sendMessage, onWSMessage } = useAppContext();
   const [inputText, setInputText] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const flatListRef = useRef<FlatList>(null);
@@ -56,6 +57,28 @@ export default function ChatScreen() {
       }, 100);
     }
   }, [messages.length]);
+
+  useEffect(() => {
+    const handler = (msg: any) => {
+      if (msg.type === 'new_message' && msg.data && msg.data.conversation_id === conversationId) {
+        const wsMsg = msg.data;
+        const newMessage: Message = {
+          id: wsMsg.id,
+          conversationId: wsMsg.conversation_id,
+          senderId: wsMsg.sender_id,
+          content: wsMsg.content,
+          type: wsMsg.type || 'text',
+          createdAt: wsMsg.created_at,
+        };
+        setMessages(prev => {
+          if (prev.some(m => m.id === newMessage.id)) return prev;
+          return [...prev, newMessage];
+        });
+      }
+    };
+    setWSHandler(handler);
+    return () => setWSHandler(onWSMessage);
+  }, [conversationId, onWSMessage]);
 
   const handleSend = useCallback(async () => {
     const text = inputText.trim();

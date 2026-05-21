@@ -5,10 +5,9 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   Pressable,
 } from 'react-native';
-import { Button, Input, WhiteSpace } from '@ant-design/react-native';
+import { Button, Input, WhiteSpace, Toast } from '@ant-design/react-native';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../theme';
 import { useAppContext } from '../../context/AppContext';
 import { IconOutline } from '@ant-design/icons-react-native';
@@ -31,7 +30,10 @@ export default function LoginScreen() {
     try {
       await login(phone, password);
     } catch (e: any) {
-      Alert.alert('登录失败', e.message || '请检查手机号和密码');
+      Toast.fail({
+        content: e.message || '请检查手机号和密码',
+        duration: 2,
+      });
     } finally {
       setLoading(false);
     }

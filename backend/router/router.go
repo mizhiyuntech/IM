@@ -6,13 +6,15 @@ import (
 	"im-backend/config"
 	"im-backend/handlers"
 	"im-backend/middleware"
+	"im-backend/ws"
 )
 
-func Setup(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
+func Setup(r *gin.Engine, db *gorm.DB, cfg *config.Config, hub *ws.Hub) {
 	authHandler := &handlers.AuthHandler{DB: db, Cfg: cfg}
 	userHandler := &handlers.UserHandler{DB: db}
 	conversationHandler := &handlers.ConversationHandler{DB: db}
-	messageHandler := &handlers.MessageHandler{DB: db}
+	messageHandler := &handlers.MessageHandler{DB: db, Hub: hub}
+	wsHandler := &handlers.WSHandler{Hub: hub}
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
@@ -53,6 +55,8 @@ func Setup(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 				messages.GET("/:id/messages", messageHandler.GetMessages)
 				messages.POST("/:id/messages", messageHandler.SendMessage)
 			}
+
+			authed.GET("/ws", wsHandler.HandleWS)
 		}
 	}
 }

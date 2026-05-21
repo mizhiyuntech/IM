@@ -4,9 +4,8 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from 'react-native';
-import { Button, Input, WhiteSpace } from '@ant-design/react-native';
+import { Button, Input, WhiteSpace, Toast } from '@ant-design/react-native';
 import { Colors, Spacing, BorderRadius } from '../../theme';
 import { useAppContext } from '../../context/AppContext';
 import { IconOutline } from '@ant-design/icons-react-native';
@@ -24,12 +23,12 @@ export default function RegisterScreen() {
     if (!name || !phone || !password || !confirmPassword) return;
 
     if (password !== confirmPassword) {
-      Alert.alert('注册失败', '两次输入的密码不一致');
+      Toast.fail({ content: '两次输入的密码不一致', duration: 2 });
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('注册失败', '密码长度不能少于6位');
+      Toast.fail({ content: '密码长度不能少于6位', duration: 2 });
       return;
     }
 
@@ -37,8 +36,9 @@ export default function RegisterScreen() {
     try {
       await api.register(phone, password, name);
       await login(phone, password);
+      Toast.success({ content: '注册成功', duration: 1 });
     } catch (e: any) {
-      Alert.alert('注册失败', e.message || '请检查输入信息');
+      Toast.fail({ content: e.message || '请检查输入信息', duration: 2 });
     } finally {
       setLoading(false);
     }

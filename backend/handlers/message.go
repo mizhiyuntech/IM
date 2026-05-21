@@ -7,10 +7,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"im-backend/models"
+	"im-backend/ws"
 )
 
 type MessageHandler struct {
-	DB *gorm.DB
+	DB  *gorm.DB
+	Hub *ws.Hub
 }
 
 type SendMessageRequest struct {
@@ -24,7 +26,7 @@ func (h *MessageHandler) GetMessages(c *gin.Context) {
 
 	var member models.ConversationMember
 	if h.DB.Where("conversation_id = ? AND user_id = ?", conversationID, userID).First(&member).Error != nil {
-		c.JSON(http.StatusForbidden, gin.H{"error": "not a member of this conversation"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "你不是该会话的成员"})
 		return
 	}
 
@@ -56,18 +58,18 @@ func (h *MessageHandler) SendMessage(c *gin.Context) {
 
 	var member models.ConversationMember
 	if h.DB.Where("conversation_id = ? AND user_id = ?", conversationID, userID).First(&member).Error != nil {
-		c.JSON(http.StatusForbidden, gin.H{"error": "not a member of this conversation"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "你不是该会话的成员"})
 		return
 	}
 
 	var req SendMessageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请求参数无效"})
 		return
 	}
 
 	if req.Content == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "content is required"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "消息内容不能为空"})
 		return
 	}
 
@@ -84,7 +86,7 @@ func (h *MessageHandler) SendMessage(c *gin.Context) {
 	}
 
 	if err := h.DB.Create(&msg).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "send message failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "发送消息失败"})
 		return
 	}
 
@@ -96,10 +98,20 @@ func (h *MessageHandler) SendMessage(c *gin.Context) {
 
 	var otherMembers []models.ConversationMember
 	h.DB.Where("conversation_id = ? AND user_id != ?", conversationID, userID).Find(&otherMembers)
+
+	var memberIDs []string
 	for _, m := range otherMembers {
+		memberIDs = append(memberIDs, m.UserID)
 		h.DB.Model(&models.ConversationMember{}).
 			Where("conversation_id = ? AND user_id = ?", conversationID, m.UserID).
 			UpdateColumn("unread_count", gorm.Expr("unread_count + 1"))
+	}
+
+	if h.Hub != nil {
+		h.Hub.BroadcastToUsers(memberIDs, ws.WSMessage{
+			Type: "new_message",
+			Data: msg,
+		})
 	}
 
 	c.JSON(http.StatusCreated, msg)

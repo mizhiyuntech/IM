@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect } from 'react';
-import { View, StyleSheet, FlatList, Alert } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, StyleSheet, FlatList, Text } from 'react-native';
 import { Colors, Spacing } from '../../theme';
 import { useAppContext } from '../../context/AppContext';
 import { Conversation } from '../../types';
@@ -7,12 +7,15 @@ import ConversationItem from '../../components/ConversationItem';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation';
+import { Modal } from '@ant-design/react-native';
 
 type ChatListNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
 
 export default function ChatListScreen() {
   const { state, markAsRead, deleteConversation, fetchConversations } = useAppContext();
   const navigation = useNavigation<ChatListNavigationProp>();
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedConv, setSelectedConv] = useState<Conversation | null>(null);
 
   useEffect(() => {
     fetchConversations();
@@ -35,26 +38,27 @@ export default function ChatListScreen() {
 
   const handleLongPress = useCallback(
     (conversation: Conversation) => {
-      Alert.alert(
-        conversation.name,
-        '选择操作',
-        [
-          { text: '取消', style: 'cancel' },
-          {
-            text: '删除会话',
-            style: 'destructive',
-            onPress: () => deleteConversation(conversation.id),
-          },
-          {
-            text: '标记已读',
-            onPress: () => markAsRead(conversation.id),
-          },
-        ],
-        { cancelable: true },
-      );
+      setSelectedConv(conversation);
+      setModalVisible(true);
     },
-    [deleteConversation, markAsRead],
+    [],
   );
+
+  const handleDelete = useCallback(() => {
+    if (selectedConv) {
+      deleteConversation(selectedConv.id);
+    }
+    setModalVisible(false);
+    setSelectedConv(null);
+  }, [selectedConv, deleteConversation]);
+
+  const handleMarkRead = useCallback(() => {
+    if (selectedConv) {
+      markAsRead(selectedConv.id);
+    }
+    setModalVisible(false);
+    setSelectedConv(null);
+  }, [selectedConv, markAsRead]);
 
   const renderItem = useCallback(
     ({ item }: { item: Conversation }) => (
@@ -77,6 +81,30 @@ export default function ChatListScreen() {
         keyExtractor={keyExtractor}
         contentContainerStyle={styles.listContent}
       />
+      <Modal
+        visible={modalVisible}
+        transparent
+        onClose={() => setModalVisible(false)}
+        footer={[
+          {
+            text: '取消',
+            onPress: () => setModalVisible(false),
+          },
+          {
+            text: '标记已读',
+            onPress: handleMarkRead,
+          },
+          {
+            text: '删除会话',
+            onPress: handleDelete,
+            style: { color: Colors.danger },
+          },
+        ]}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>{selectedConv?.name}</Text>
+          <Text style={styles.modalDesc}>选择操作</Text>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -88,5 +116,20 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: Spacing.sm,
+  },
+  modalContent: {
+    paddingVertical: Spacing.lg,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: Spacing.sm,
+  },
+  modalDesc: {
+    fontSize: 14,
+    color: Colors.textHint,
+    textAlign: 'center',
   },
 });

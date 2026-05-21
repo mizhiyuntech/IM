@@ -13,14 +13,14 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "missing token"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "缺少认证令牌"})
 			c.Abort()
 			return
 		}
 
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token format"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "令牌格式无效"})
 			c.Abort()
 			return
 		}
@@ -33,14 +33,14 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "令牌无效或已过期"})
 			c.Abort()
 			return
 		}
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid claims"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "令牌内容无效"})
 			c.Abort()
 			return
 		}

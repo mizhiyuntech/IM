@@ -1,12 +1,15 @@
-import React, { createContext, useContext, useReducer, useCallback, ReactNode, useEffect } from 'react';
-import { User, Conversation } from '../types';
+import React, { createContext, useContext, useReducer, useCallback, ReactNode, useEffect, useRef } from 'react';
+import { User, Conversation, Message } from '../types';
 import { api, setToken } from '../services/api';
+import { connectWS, disconnectWS, setWSHandler } from '../services/websocket';
+import { initNotification, showNotification, requestNotificationPermission } from '../services/notification';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AppState as RNAppState } from 'react-native';
 
 const STORAGE_KEY_TOKEN = 'im_token';
 const STORAGE_KEY_USER = 'im_user';
 
-interface AppState {
+interface AppGlobalState {
   isLoggedIn: boolean;
   currentUser: User | null;
   conversations: Conversation[];
@@ -24,9 +27,10 @@ type Action =
   | { type: 'UPDATE_CONVERSATION'; payload: Conversation }
   | { type: 'REMOVE_CONVERSATION'; payload: string }
   | { type: 'MARK_AS_READ'; payload: string }
+  | { type: 'ADD_MESSAGE'; payload: { conversationId: string; message: Message } }
   | { type: 'RESTORE_DONE' };
 
-const initialState: AppState = {
+const initialState: AppGlobalState = {
   isLoggedIn: false,
   currentUser: null,
   conversations: [],
@@ -35,7 +39,7 @@ const initialState: AppState = {
   restoring: true,
 };
 
-function appReducer(state: AppState, action: Action): AppState {
+function appReducer(state: AppGlobalState, action: Action): AppGlobalState {
   switch (action.type) {
     case 'SET_LOADING':
       return { ...state, loading: action.payload };
@@ -81,6 +85,23 @@ function appReducer(state: AppState, action: Action): AppState {
           return conv;
         }),
       };
+    case 'ADD_MESSAGE': {
+      const { conversationId, message } = action.payload;
+      return {
+        ...state,
+        conversations: state.conversations.map(conv => {
+          if (conv.id === conversationId) {
+            return {
+              ...conv,
+              lastMessage: message.content,
+              updatedAt: message.createdAt,
+              unreadCount: conv.unreadCount + 1,
+            };
+          }
+          return conv;
+        }),
+      };
+    }
     case 'RESTORE_DONE':
       return { ...state, restoring: false };
     default:
@@ -89,7 +110,7 @@ function appReducer(state: AppState, action: Action): AppState {
 }
 
 interface AppContextType {
-  state: AppState;
+  state: AppGlobalState;
   login: (phone: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   fetchConversations: () => Promise<void>;
@@ -98,12 +119,57 @@ interface AppContextType {
   markAsRead: (conversationId: string) => Promise<void>;
   deleteConversation: (conversationId: string) => Promise<void>;
   getUserById: (id: string) => User | undefined;
+  onWSMessage: (msg: any) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
+  const appStateRef = useRef(RNAppState.currentState);
+
+  useEffect(() => {
+    initNotification();
+    requestNotificationPermission();
+  }, []);
+
+  useEffect(() => {
+    const sub = RNAppState.addEventListener('change', nextAppState => {
+      if (appStateRef.current.match(/inactive|background/) && nextAppState === 'active') {
+        if (state.isLoggedIn) {
+          fetchConversations();
+        }
+      }
+      appStateRef.current = nextAppState;
+    });
+    return () => sub.remove();
+  }, [state.isLoggedIn, fetchConversations]);
+
+  const onWSMessage = useCallback((msg: any) => {
+    if (msg.type === 'new_message' && msg.data) {
+      const wsMsg = msg.data;
+      const message: Message = {
+        id: wsMsg.id,
+        conversationId: wsMsg.conversation_id,
+        senderId: wsMsg.sender_id,
+        content: wsMsg.content,
+        type: wsMsg.type || 'text',
+        createdAt: wsMsg.created_at,
+      };
+
+      dispatch({
+        type: 'ADD_MESSAGE',
+        payload: { conversationId: message.conversationId, message },
+      });
+
+      const senderName = state.users.find(u => u.id === message.senderId)?.name || '用户';
+      showNotification(senderName, message.content);
+    }
+  }, [state.users]);
+
+  useEffect(() => {
+    setWSHandler(onWSMessage);
+  }, [onWSMessage]);
 
   useEffect(() => {
     restoreSession();
@@ -119,6 +185,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const user: User = JSON.parse(savedUser);
         dispatch({ type: 'LOGIN', payload: { user } });
 
+        connectWS(savedToken);
+
         try {
           const freshUser = await api.getCurrentUser();
           const updatedUser: User = {
@@ -130,10 +198,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           await AsyncStorage.setItem(STORAGE_KEY_USER, JSON.stringify(updatedUser));
           dispatch({ type: 'LOGIN', payload: { user: updatedUser } });
         } catch {
-          // token expired, clear session
           await AsyncStorage.removeItem(STORAGE_KEY_TOKEN);
           await AsyncStorage.removeItem(STORAGE_KEY_USER);
           setToken(null);
+          disconnectWS();
           dispatch({ type: 'LOGOUT' });
         }
       }
@@ -158,6 +226,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       await AsyncStorage.setItem(STORAGE_KEY_TOKEN, res.token);
       await AsyncStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
       dispatch({ type: 'LOGIN', payload: { user } });
+      connectWS(res.token);
+      await requestNotificationPermission();
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
@@ -165,6 +235,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     setToken(null);
+    disconnectWS();
     await AsyncStorage.removeItem(STORAGE_KEY_TOKEN);
     await AsyncStorage.removeItem(STORAGE_KEY_USER);
     dispatch({ type: 'LOGOUT' });
@@ -263,6 +334,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         markAsRead,
         deleteConversation,
         getUserById,
+        onWSMessage,
       }}>
       {children}
     </AppContext.Provider>

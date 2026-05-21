@@ -36,7 +36,7 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 
 	var user models.User
 	if err := h.DB.First(&user, "id = ?", userID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "用户不存在"})
 		return
 	}
 
@@ -52,7 +52,7 @@ func (h *UserHandler) GetAllUsers(c *gin.Context) {
 func (h *UserHandler) SearchUser(c *gin.Context) {
 	keyword := c.Query("keyword")
 	if keyword == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "keyword is required"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "搜索关键词不能为空"})
 		return
 	}
 
@@ -71,24 +71,24 @@ func (h *UserHandler) AddContact(c *gin.Context) {
 		ContactID string `json:"contact_id" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "contact_id is required"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "contact_id 不能为空"})
 		return
 	}
 
 	if req.ContactID == userID {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "cannot add yourself"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "不能添加自己为好友"})
 		return
 	}
 
 	var target models.User
 	if h.DB.First(&target, "id = ?", req.ContactID).Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "用户不存在"})
 		return
 	}
 
 	var existing models.Contact
 	if h.DB.Where("user_id = ? AND contact_id = ?", userID, req.ContactID).First(&existing).Error == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "already added"})
+		c.JSON(http.StatusConflict, gin.H{"error": "已经是好友了"})
 		return
 	}
 
@@ -97,7 +97,7 @@ func (h *UserHandler) AddContact(c *gin.Context) {
 		ContactID: req.ContactID,
 	}
 	if err := h.DB.Create(&contact).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "add contact failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "添加好友失败"})
 		return
 	}
 

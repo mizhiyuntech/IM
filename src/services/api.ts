@@ -29,8 +29,8 @@ async function request<T>(
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'request failed' }));
-    throw new Error(error.error || `HTTP ${response.status}`);
+    const error = await response.json().catch(() => ({ error: '请求失败' }));
+    throw new Error(error.error || `请求失败 (${response.status})`);
   }
 
   return response.json();
