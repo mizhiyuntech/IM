@@ -1,16 +1,21 @@
 package ws
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"sync"
 
 	"github.com/gorilla/websocket"
+	"github.com/redis/go-redis/v9"
 )
+
+const channelName = "im:messages"
 
 type Hub struct {
 	mu      sync.RWMutex
 	clients map[string]*Client
+	rdb     *redis.Client
 }
 
 type Client struct {
@@ -21,13 +26,15 @@ type Client struct {
 }
 
 type WSMessage struct {
-	Type string      `json:"type"`
-	Data interface{} `json:"data"`
+	Type       string      `json:"type"`
+	TargetUser string      `json:"target_user,omitempty"`
+	Data       interface{} `json:"data"`
 }
 
-func NewHub() *Hub {
+func NewHub(rdb *redis.Client) *Hub {
 	return &Hub{
 		clients: make(map[string]*Client),
+		rdb:     rdb,
 	}
 }
 
@@ -52,11 +59,7 @@ func (h *Hub) Unregister(client *Client) {
 	log.Printf("[WS] user %s disconnected, online: %d", client.UserID, h.OnlineCount())
 }
 
-func (h *Hub) SendToUser(userID string, msg WSMessage) {
-	data, err := json.Marshal(msg)
-	if err != nil {
-		return
-	}
+func (h *Hub) deliverLocal(userID string, data []byte) {
 	h.mu.RLock()
 	client, ok := h.clients[userID]
 	h.mu.RUnlock()
@@ -66,6 +69,23 @@ func (h *Hub) SendToUser(userID string, msg WSMessage) {
 		default:
 			go h.Unregister(client)
 		}
+	}
+}
+
+func (h *Hub) SendToUser(userID string, msg WSMessage) {
+	if h.rdb != nil {
+		msg.TargetUser = userID
+		data, err := json.Marshal(msg)
+		if err != nil {
+			return
+		}
+		h.rdb.Publish(context.Background(), channelName, data)
+	} else {
+		data, err := json.Marshal(msg)
+		if err != nil {
+			return
+		}
+		h.deliverLocal(userID, data)
 	}
 }
 
@@ -79,6 +99,32 @@ func (h *Hub) OnlineCount() int {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return len(h.clients)
+}
+
+func (h *Hub) Subscribe(ctx context.Context) {
+	if h.rdb == nil {
+		return
+	}
+
+	sub := h.rdb.Subscribe(ctx, channelName)
+	ch := sub.Channel()
+
+	log.Printf("[Redis] subscribed to channel %s", channelName)
+
+	for msg := range ch {
+		var wsMsg WSMessage
+		if err := json.Unmarshal([]byte(msg.Payload), &wsMsg); err != nil {
+			continue
+		}
+
+		if wsMsg.TargetUser == "" {
+			continue
+		}
+
+		h.deliverLocal(wsMsg.TargetUser, []byte(msg.Payload))
+	}
+
+	log.Printf("[Redis] unsubscribed from channel %s", channelName)
 }
 
 func (c *Client) WritePump() {

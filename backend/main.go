@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"im-backend/config"
@@ -31,7 +33,26 @@ func main() {
 		&models.Contact{},
 	)
 
-	hub := ws.NewHub()
+	var rdb *redis.Client
+	rdb = redis.NewClient(&redis.Options{
+		Addr:     cfg.RedisAddr(),
+		Password: cfg.Redis.Password,
+		DB:       cfg.Redis.DB,
+	})
+
+	ctx := context.Background()
+	if err := rdb.Ping(ctx).Err(); err != nil {
+		log.Printf("[Redis] connection failed: %v, falling back to local mode", err)
+		rdb = nil
+	} else {
+		log.Printf("[Redis] connected to %s", cfg.RedisAddr())
+	}
+
+	hub := ws.NewHub(rdb)
+
+	if rdb != nil {
+		go hub.Subscribe(ctx)
+	}
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
