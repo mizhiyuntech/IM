@@ -130,6 +130,16 @@ export const api = {
     return request(`/conversations/${conversationId}`, { method: 'DELETE' });
   },
 
+  createOrGetConversation(
+    type: string,
+    memberId: string,
+  ): Promise<ConversationResponse> {
+    return request('/conversations', {
+      method: 'POST',
+      body: JSON.stringify({ type, member_id: memberId }),
+    });
+  },
+
   getMessages(
     conversationId: string,
     page = 1,

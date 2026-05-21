@@ -11,10 +11,10 @@ import (
 
 func Setup(r *gin.Engine, db *gorm.DB, cfg *config.Config, hub *ws.Hub) {
 	authHandler := &handlers.AuthHandler{DB: db, Cfg: cfg}
-	userHandler := &handlers.UserHandler{DB: db}
-	conversationHandler := &handlers.ConversationHandler{DB: db}
+	userHandler := &handlers.UserHandler{DB: db, Hub: hub}
+	conversationHandler := &handlers.ConversationHandler{DB: db, Hub: hub}
 	messageHandler := &handlers.MessageHandler{DB: db, Hub: hub}
-	wsHandler := &handlers.WSHandler{Hub: hub}
+	wsHandler := &handlers.WSHandler{Hub: hub, Cfg: cfg}
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
@@ -27,6 +27,8 @@ func Setup(r *gin.Engine, db *gorm.DB, cfg *config.Config, hub *ws.Hub) {
 			auth.POST("/login", authHandler.Login)
 			auth.POST("/register", authHandler.Register)
 		}
+
+		api.GET("/ws", wsHandler.HandleWS)
 
 		authed := api.Group("")
 		authed.Use(middleware.AuthMiddleware(cfg))
@@ -46,6 +48,7 @@ func Setup(r *gin.Engine, db *gorm.DB, cfg *config.Config, hub *ws.Hub) {
 			conversations := authed.Group("/conversations")
 			{
 				conversations.GET("", conversationHandler.GetConversations)
+				conversations.POST("", conversationHandler.CreateOrGetConversation)
 				conversations.PUT("/:id/read", conversationHandler.MarkAsRead)
 				conversations.DELETE("/:id", conversationHandler.DeleteConversation)
 			}
@@ -55,8 +58,6 @@ func Setup(r *gin.Engine, db *gorm.DB, cfg *config.Config, hub *ws.Hub) {
 				messages.GET("/:id/messages", messageHandler.GetMessages)
 				messages.POST("/:id/messages", messageHandler.SendMessage)
 			}
-
-			authed.GET("/ws", wsHandler.HandleWS)
 		}
 	}
 }

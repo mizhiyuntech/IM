@@ -290,8 +290,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       const senderName = state.users.find(u => u.id === message.senderId)?.name || '用户';
       showNotification(senderName, message.content);
+    } else if (msg.type === 'friend_added' && msg.data) {
+      showNotification('新好友', `${msg.data.user_name} 添加你为好友`);
+      fetchUsers();
+      fetchConversations();
+    } else if (msg.type === 'new_conversation' && msg.data) {
+      fetchConversations();
     }
-  }, [state.users]);
+  }, [state.users, fetchUsers, fetchConversations]);
 
   useEffect(() => {
     initNotification();

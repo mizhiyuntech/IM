@@ -7,6 +7,7 @@ import { useAppContext } from '../context/AppContext';
 import LoginScreen from '../screens/Login/LoginScreen';
 import RegisterScreen from '../screens/Register/RegisterScreen';
 import AddFriendScreen from '../screens/AddFriend/AddFriendScreen';
+import ContactDetailScreen from '../screens/ContactDetail/ContactDetailScreen';
 import ChatListScreen from '../screens/ChatList/ChatListScreen';
 import ChatScreen from '../screens/Chat/ChatScreen';
 import ContactsScreen from '../screens/Contacts/ContactsScreen';
@@ -20,6 +21,12 @@ export type RootStackParamList = {
   MainTabs: undefined;
   Chat: { conversationId: string; conversationName: string };
   AddFriend: undefined;
+  ContactDetail: {
+    userId: string;
+    userName: string;
+    userAvatar: string;
+    userPhone: string;
+  };
 };
 
 export type MainTabParamList = {
@@ -124,6 +131,18 @@ export default function AppNavigator() {
               options={{
                 headerShown: true,
                 headerTitle: '添加好友',
+                headerTitleStyle: styles.headerTitle,
+                headerTintColor: Colors.textPrimary,
+                headerStyle: { backgroundColor: Colors.white },
+                headerShadowVisible: false,
+              }}
+            />
+            <Stack.Screen
+              name="ContactDetail"
+              component={ContactDetailScreen}
+              options={{
+                headerShown: true,
+                headerTitle: '好友详情',
                 headerTitleStyle: styles.headerTitle,
                 headerTintColor: Colors.textPrimary,
                 headerStyle: { backgroundColor: Colors.white },

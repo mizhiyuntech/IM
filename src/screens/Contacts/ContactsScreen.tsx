@@ -50,7 +50,17 @@ export default function ContactsScreen() {
     return result;
   }, [state.users]);
 
-  const handleContactPress = useCallback((_user: User) => {}, []);
+  const handleContactPress = useCallback(
+    (user: User) => {
+      navigation.navigate('ContactDetail', {
+        userId: user.id,
+        userName: user.name,
+        userAvatar: user.avatar,
+        userPhone: user.phone,
+      });
+    },
+    [navigation],
+  );
 
   const renderItem = useCallback(
     ({ item }: { item: User }) => (

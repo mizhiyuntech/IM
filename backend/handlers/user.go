@@ -6,10 +6,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"im-backend/models"
+	"im-backend/ws"
 )
 
 type UserHandler struct {
-	DB *gorm.DB
+	DB  *gorm.DB
+	Hub *ws.Hub
 }
 
 func (h *UserHandler) GetContacts(c *gin.Context) {
@@ -106,6 +108,20 @@ func (h *UserHandler) AddContact(c *gin.Context) {
 		ContactID: userID,
 	}
 	h.DB.Where("user_id = ? AND contact_id = ?", req.ContactID, userID).FirstOrCreate(&reverseContact)
+
+	var currentUser models.User
+	h.DB.First(&currentUser, "id = ?", userID)
+
+	if h.Hub != nil {
+		h.Hub.SendToUser(req.ContactID, ws.WSMessage{
+			Type: "friend_added",
+			Data: map[string]string{
+				"user_id":   userID,
+				"user_name": currentUser.Name,
+				"avatar":    currentUser.Avatar,
+			},
+		})
+	}
 
 	c.JSON(http.StatusCreated, gin.H{"message": "ok"})
 }
