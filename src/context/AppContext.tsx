@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useReducer, useCallback, ReactNode, useEffect, useRef } from 'react';
 import { User, Conversation, Message } from '../types';
 import { api, setToken } from '../services/api';
-import { connectWS, disconnectWS, setWSHandler } from '../services/websocket';
+import { connectWS, disconnectWS, addWSHandler, removeWSHandler } from '../services/websocket';
 import { initNotification, showNotification, requestNotificationPermission } from '../services/notification';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState as RNAppState } from 'react-native';
@@ -120,6 +120,8 @@ interface AppContextType {
   deleteConversation: (conversationId: string) => Promise<void>;
   getUserById: (id: string) => User | undefined;
   onWSMessage: (msg: any) => void;
+  activeConversationId: string | null;
+  setActiveConversationId: (id: string | null) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -127,6 +129,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
   const appStateRef = useRef(RNAppState.currentState);
+  const [activeConversationId, setActiveConversationId] = React.useState<string | null>(null);
 
   const restoreSession = useCallback(async () => {
     try {
@@ -205,6 +208,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         lastMessage: item.last_message,
         unreadCount: item.unread_count,
         updatedAt: item.updated_at,
+        groupId: item.group_id || undefined,
       }));
       dispatch({ type: 'SET_CONVERSATIONS', payload: conversations });
     } catch {
@@ -288,8 +292,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         payload: { conversationId: message.conversationId, message },
       });
 
-      const senderName = state.users.find(u => u.id === message.senderId)?.name || '用户';
-      showNotification(senderName, message.content);
+      if (message.conversationId !== activeConversationId) {
+        const senderName = state.users.find(u => u.id === message.senderId)?.name || '用户';
+        showNotification(senderName, message.content);
+      }
     } else if (msg.type === 'friend_added' && msg.data) {
       showNotification('新好友', `${msg.data.user_name} 添加你为好友`);
       fetchUsers();
@@ -297,7 +303,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } else if (msg.type === 'new_conversation' && msg.data) {
       fetchConversations();
     }
-  }, [state.users, fetchUsers, fetchConversations]);
+  }, [state.users, fetchUsers, fetchConversations, activeConversationId]);
 
   useEffect(() => {
     initNotification();
@@ -321,7 +327,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [state.isLoggedIn, fetchConversations]);
 
   useEffect(() => {
-    setWSHandler(onWSMessage);
+    addWSHandler(onWSMessage);
+    return () => removeWSHandler(onWSMessage);
   }, [onWSMessage]);
 
   if (state.restoring) {
@@ -341,6 +348,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         deleteConversation,
         getUserById,
         onWSMessage,
+        activeConversationId,
+        setActiveConversationId,
       }}>
       {children}
     </AppContext.Provider>

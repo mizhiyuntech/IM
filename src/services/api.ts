@@ -51,9 +51,36 @@ export interface ConversationResponse {
   type: string;
   name: string;
   avatar: string;
+  group_id?: string;
   last_message: string;
   updated_at: string;
   unread_count: number;
+}
+
+export interface GroupInfoResponse {
+  id: string;
+  name: string;
+  avatar: string;
+  owner_id: string;
+  member_count: number;
+  created_at: string;
+}
+
+export interface GroupMemberResponse {
+  id: number;
+  group_id: string;
+  user_id: string;
+  role: string;
+  created_at: string;
+  name: string;
+  avatar: string;
+  phone: string;
+}
+
+export interface CreateGroupResponse {
+  group: GroupInfoResponse;
+  conversation: ConversationResponse;
+  member_count: number;
 }
 
 export interface MessageResponse {
@@ -158,6 +185,35 @@ export const api = {
     return request(`/conversations/${conversationId}/messages`, {
       method: 'POST',
       body: JSON.stringify({ content, type }),
+    });
+  },
+
+  createGroup(
+    name: string,
+    memberIds: string[],
+  ): Promise<CreateGroupResponse> {
+    return request('/groups', {
+      method: 'POST',
+      body: JSON.stringify({ name, member_ids: memberIds }),
+    });
+  },
+
+  getGroupInfo(groupId: string): Promise<GroupInfoResponse> {
+    return request(`/groups/${groupId}`);
+  },
+
+  getGroupMembers(groupId: string): Promise<GroupMemberResponse[]> {
+    return request(`/groups/${groupId}/members`);
+  },
+
+  setMemberRole(
+    groupId: string,
+    userId: string,
+    role: string,
+  ): Promise<{ message: string }> {
+    return request(`/groups/${groupId}/members/${userId}/role`, {
+      method: 'PUT',
+      body: JSON.stringify({ role }),
     });
   },
 };

@@ -10,6 +10,7 @@ import { Conversation } from '../../types';
 import { formatTime } from '../../utils';
 import { Badge } from '@ant-design/react-native';
 import Avatar from '../Avatar';
+import { IconOutline } from '@ant-design/icons-react-native';
 
 interface ConversationItemProps {
   conversation: Conversation;
@@ -38,9 +39,14 @@ function ConversationItem({
       <Avatar uri={conversation.avatar} name={conversation.name} size={48} />
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.name} numberOfLines={1}>
-            {conversation.name}
-          </Text>
+          <View style={styles.nameRow}>
+            {conversation.type === 'group' && (
+              <IconOutline name="team" size={14} color={Colors.textSecondary} style={styles.groupIcon} />
+            )}
+            <Text style={styles.name} numberOfLines={1}>
+              {conversation.name}
+            </Text>
+          </View>
           <Text style={styles.time}>{formatTime(conversation.updatedAt)}</Text>
         </View>
         <View style={styles.footer}>
@@ -84,6 +90,15 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     flex: 1,
     marginRight: Spacing.sm,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  groupIcon: {
+    marginRight: Spacing.xs,
   },
   time: {
     fontSize: FontSize.sm,

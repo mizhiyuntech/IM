@@ -31,6 +31,8 @@ export default function ChatListScreen() {
       navigation.navigate('Chat', {
         conversationId: conversation.id,
         conversationName: conversation.name,
+        conversationType: conversation.type,
+        groupId: conversation.groupId,
       });
     },
     [markAsRead, navigation],

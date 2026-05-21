@@ -16,6 +16,10 @@ export const Colors = {
   success: '#52C41A',
   tabActive: '#1677FF',
   tabInactive: '#999999',
+  groupOwner: '#FAAD14',
+  groupOwnerBg: '#FFFBE6',
+  groupAdmin: '#52C41A',
+  groupAdminBg: '#F6FFED',
 };
 
 export const Spacing = {

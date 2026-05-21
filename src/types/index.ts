@@ -23,12 +23,27 @@ export interface Conversation {
   unreadCount: number;
   updatedAt: string;
   members?: string[];
+  groupId?: string;
 }
 
 export interface Group {
   id: string;
   name: string;
   avatar: string;
-  members: string[];
   ownerId: string;
+  memberCount: number;
+  createdAt: string;
+}
+
+export type GroupRole = 'owner' | 'admin' | 'member';
+
+export interface GroupMemberInfo {
+  id: number;
+  group_id: string;
+  user_id: string;
+  role: GroupRole;
+  created_at: string;
+  name: string;
+  avatar: string;
+  phone: string;
 }

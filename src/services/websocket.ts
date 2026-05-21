@@ -2,13 +2,18 @@ const WS_URL = 'wss://app.mizhiyun.cloud/api/ws';
 
 type WSMessageHandler = (data: any) => void;
 
+const handlers: Set<WSMessageHandler> = new Set();
+
 let ws: WebSocket | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-let messageHandler: WSMessageHandler | null = null;
 let currentToken: string | null = null;
 
-export function setWSHandler(handler: WSMessageHandler) {
-  messageHandler = handler;
+export function addWSHandler(handler: WSMessageHandler) {
+  handlers.add(handler);
+}
+
+export function removeWSHandler(handler: WSMessageHandler) {
+  handlers.delete(handler);
 }
 
 export function connectWS(token: string) {
@@ -38,9 +43,13 @@ function doConnect() {
   ws.onmessage = (event: WebSocketMessageEvent) => {
     try {
       const msg = JSON.parse(event.data);
-      if (messageHandler) {
-        messageHandler(msg);
-      }
+      handlers.forEach(handler => {
+        try {
+          handler(msg);
+        } catch {
+          // ignore handler error
+        }
+      });
     } catch {
       // ignore parse error
     }
@@ -62,6 +71,7 @@ function doConnect() {
 
 export function disconnectWS() {
   currentToken = null;
+  handlers.clear();
   if (reconnectTimer) {
     clearTimeout(reconnectTimer);
     reconnectTimer = null;

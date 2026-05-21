@@ -29,6 +29,7 @@ type GroupMember struct {
 	ID        uint      `json:"id" gorm:"primaryKey;autoIncrement"`
 	GroupID   string    `json:"group_id" gorm:"size:64;not null;uniqueIndex:uk_group_user"`
 	UserID    string    `json:"user_id" gorm:"size:64;not null;uniqueIndex:uk_group_user"`
+	Role      string    `json:"role" gorm:"size:16;not null;default:'member'"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -39,6 +40,7 @@ type Conversation struct {
 	Type         string    `json:"type" gorm:"size:16;not null;default:'private'"`
 	Name         string    `json:"name" gorm:"size:64;not null;default:''"`
 	Avatar       string    `json:"avatar" gorm:"size:512;not null;default:''"`
+	GroupID      string    `json:"group_id" gorm:"size:64;not null;default:''"`
 	LastMessage  string    `json:"last_message" gorm:"type:text"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }

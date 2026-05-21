@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS `group_members` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `group_id` VARCHAR(64) NOT NULL COMMENT '群组ID',
   `user_id` VARCHAR(64) NOT NULL COMMENT '用户ID',
+  `role` VARCHAR(16) NOT NULL DEFAULT 'member' COMMENT '角色: owner/admin/member',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_group_user` (`group_id`, `user_id`),
@@ -40,6 +41,7 @@ CREATE TABLE IF NOT EXISTS `conversations` (
   `type` VARCHAR(16) NOT NULL DEFAULT 'private' COMMENT '会话类型: private/group',
   `name` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '会话名称',
   `avatar` VARCHAR(512) NOT NULL DEFAULT '' COMMENT '会话头像',
+  `group_id` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '群组ID(群聊时关联)',
   `last_message` TEXT COMMENT '最后一条消息内容',
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)

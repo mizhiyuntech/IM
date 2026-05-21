@@ -17,14 +17,14 @@ import { RootStackParamList } from '../../navigation';
 import { Input } from '@ant-design/react-native';
 import { IconOutline } from '@ant-design/icons-react-native';
 import { api } from '../../services/api';
-import { setWSHandler } from '../../services/websocket';
+import { addWSHandler, removeWSHandler } from '../../services/websocket';
 
 type ChatRouteProp = RouteProp<RootStackParamList, 'Chat'>;
 
 export default function ChatScreen() {
   const route = useRoute<ChatRouteProp>();
-  const { conversationId } = route.params;
-  const { sendMessage, onWSMessage } = useAppContext();
+  const { conversationId, conversationType, groupId } = route.params;
+  const { sendMessage, setActiveConversationId, markAsRead } = useAppContext();
   const [inputText, setInputText] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const flatListRef = useRef<FlatList>(null);
@@ -48,7 +48,12 @@ export default function ChatScreen() {
 
   useEffect(() => {
     fetchMessages();
-  }, [fetchMessages]);
+    setActiveConversationId(conversationId);
+    markAsRead(conversationId);
+    return () => {
+      setActiveConversationId(null);
+    };
+  }, [fetchMessages, conversationId, setActiveConversationId, markAsRead]);
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -76,9 +81,9 @@ export default function ChatScreen() {
         });
       }
     };
-    setWSHandler(handler);
-    return () => setWSHandler(onWSMessage);
-  }, [conversationId, onWSMessage]);
+    addWSHandler(handler);
+    return () => removeWSHandler(handler);
+  }, [conversationId]);
 
   const handleSend = useCallback(async () => {
     const text = inputText.trim();
@@ -89,8 +94,14 @@ export default function ChatScreen() {
   }, [inputText, conversationId, sendMessage, fetchMessages]);
 
   const renderItem = useCallback(
-    ({ item }: { item: Message }) => <ChatBubble message={item} />,
-    [],
+    ({ item }: { item: Message }) => (
+      <ChatBubble
+        message={item}
+        conversationType={conversationType}
+        groupId={groupId}
+      />
+    ),
+    [conversationType, groupId],
   );
 
   const keyExtractor = useCallback((item: Message) => item.id, []);

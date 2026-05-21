@@ -94,7 +94,9 @@ export default function ContactsScreen() {
           </View>
           <Text style={styles.actionLabel}>新的朋友</Text>
         </Pressable>
-        <Pressable style={styles.actionItem}>
+        <Pressable
+          style={styles.actionItem}
+          onPress={() => navigation.navigate('CreateGroup')}>
           <View style={[styles.actionIcon, { backgroundColor: Colors.success }]}>
             <IconOutline name="team" size={20} color={Colors.white} />
           </View>

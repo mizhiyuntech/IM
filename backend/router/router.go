@@ -15,6 +15,7 @@ func Setup(r *gin.Engine, db *gorm.DB, cfg *config.Config, hub *ws.Hub) {
 	conversationHandler := &handlers.ConversationHandler{DB: db, Hub: hub}
 	messageHandler := &handlers.MessageHandler{DB: db, Hub: hub}
 	wsHandler := &handlers.WSHandler{Hub: hub, Cfg: cfg}
+	groupHandler := &handlers.GroupHandler{DB: db, Hub: hub}
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
@@ -57,6 +58,14 @@ func Setup(r *gin.Engine, db *gorm.DB, cfg *config.Config, hub *ws.Hub) {
 			{
 				messages.GET("/:id/messages", messageHandler.GetMessages)
 				messages.POST("/:id/messages", messageHandler.SendMessage)
+			}
+
+			groups := authed.Group("/groups")
+			{
+				groups.POST("", groupHandler.CreateGroup)
+				groups.GET("/:id", groupHandler.GetGroupInfo)
+				groups.GET("/:id/members", groupHandler.GetGroupMembers)
+				groups.PUT("/:id/members/:userId/role", groupHandler.SetMemberRole)
 			}
 		}
 	}

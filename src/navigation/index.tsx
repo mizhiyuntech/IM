@@ -7,6 +7,7 @@ import { useAppContext } from '../context/AppContext';
 import LoginScreen from '../screens/Login/LoginScreen';
 import RegisterScreen from '../screens/Register/RegisterScreen';
 import AddFriendScreen from '../screens/AddFriend/AddFriendScreen';
+import CreateGroupScreen from '../screens/CreateGroup/CreateGroupScreen';
 import ContactDetailScreen from '../screens/ContactDetail/ContactDetailScreen';
 import ChatListScreen from '../screens/ChatList/ChatListScreen';
 import ChatScreen from '../screens/Chat/ChatScreen';
@@ -19,8 +20,14 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   MainTabs: undefined;
-  Chat: { conversationId: string; conversationName: string };
+  Chat: {
+    conversationId: string;
+    conversationName: string;
+    conversationType?: 'private' | 'group';
+    groupId?: string;
+  };
   AddFriend: undefined;
+  CreateGroup: undefined;
   ContactDetail: {
     userId: string;
     userName: string;
@@ -143,6 +150,18 @@ export default function AppNavigator() {
               options={{
                 headerShown: true,
                 headerTitle: '好友详情',
+                headerTitleStyle: styles.headerTitle,
+                headerTintColor: Colors.textPrimary,
+                headerStyle: { backgroundColor: Colors.white },
+                headerShadowVisible: false,
+              }}
+            />
+            <Stack.Screen
+              name="CreateGroup"
+              component={CreateGroupScreen}
+              options={{
+                headerShown: true,
+                headerTitle: '创建群聊',
                 headerTitleStyle: styles.headerTitle,
                 headerTintColor: Colors.textPrimary,
                 headerStyle: { backgroundColor: Colors.white },
