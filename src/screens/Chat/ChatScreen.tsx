@@ -4,10 +4,10 @@ import {
   StyleSheet,
   FlatList,
   Pressable,
-  KeyboardAvoidingView,
-  Platform,
   Keyboard,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, BorderRadius } from '../../theme';
 import { useAppContext } from '../../context/AppContext';
 import { Message } from '../../types';
@@ -31,7 +31,9 @@ export default function ChatScreen() {
   const { sendMessage, setActiveConversationId, markAsRead } = useAppContext();
   const [inputText, setInputText] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
+  const [keyboardH, setKeyboardH] = useState(0);
   const flatListRef = useRef<FlatList>(null);
+  const insets = useSafeAreaInsets();
 
   useLayoutEffect(() => {
     if (conversationType === 'group' && groupId) {
@@ -46,6 +48,22 @@ export default function ChatScreen() {
       });
     }
   }, [navigation, conversationType, groupId, conversationId]);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
+      setKeyboardH(e.endCoordinates.height);
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    });
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardH(0);
+    });
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const fetchMessages = useCallback(async () => {
     try {
@@ -125,12 +143,14 @@ export default function ChatScreen() {
 
   const keyExtractor = useCallback((item: Message) => item.id, []);
 
+  const bottomPadding = keyboardH > 0
+    ? keyboardH
+    : Platform.OS === 'android'
+      ? insets.bottom
+      : 0;
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-      enabled>
+    <View style={styles.container}>
       <FlatList
         ref={flatListRef}
         data={messages}
@@ -164,7 +184,8 @@ export default function ChatScreen() {
           />
         </Pressable>
       </View>
-    </KeyboardAvoidingView>
+      <View style={{ height: bottomPadding }} />
+    </View>
   );
 }
 

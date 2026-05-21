@@ -160,5 +160,31 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	var user models.User
 	h.DB.First(&user, "id = ?", userID)
 
+	if h.Hub != nil {
+		var contacts []models.Contact
+		h.DB.Where("user_id = ?", userID).Find(&contacts)
+		for _, ct := range contacts {
+			h.Hub.SendToUser(ct.ContactID, ws.WSMessage{
+				Type: "profile_updated",
+				Data: map[string]string{
+					"user_id": userID,
+					"name":    req.Name,
+				},
+			})
+		}
+
+		var reverseContacts []models.Contact
+		h.DB.Where("contact_id = ?", userID).Find(&reverseContacts)
+		for _, ct := range reverseContacts {
+			h.Hub.SendToUser(ct.UserID, ws.WSMessage{
+				Type: "profile_updated",
+				Data: map[string]string{
+					"user_id": userID,
+					"name":    req.Name,
+				},
+			})
+		}
+	}
+
 	c.JSON(http.StatusOK, user)
 }

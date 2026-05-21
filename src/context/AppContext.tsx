@@ -325,6 +325,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } else if (msg.type === 'group_dissolved' && msg.data) {
       showNotification('群聊已解散', `${msg.data.name} 已被群主解散`);
       fetchConversations();
+    } else if (msg.type === 'profile_updated' && msg.data) {
+      fetchConversations();
+      fetchUsers();
     }
   }, [fetchUsers, fetchConversations]);
 

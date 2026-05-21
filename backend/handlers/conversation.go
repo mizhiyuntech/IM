@@ -43,6 +43,16 @@ func (h *ConversationHandler) GetConversations(c *gin.Context) {
 
 	result := make([]ConversationWithUnread, len(conversations))
 	for i, conv := range conversations {
+		if conv.Type == "private" {
+			var otherMember models.ConversationMember
+			if err := h.DB.Where("conversation_id = ? AND user_id != ?", conv.ID, userID).First(&otherMember).Error; err == nil {
+				var otherUser models.User
+				if err := h.DB.First(&otherUser, "id = ?", otherMember.UserID).Error; err == nil {
+					conv.Name = otherUser.Name
+					conv.Avatar = otherUser.Avatar
+				}
+			}
+		}
 		result[i] = ConversationWithUnread{
 			Conversation: conv,
 			UnreadCount:  unreadMap[conv.ID],
@@ -75,6 +85,11 @@ func (h *ConversationHandler) CreateOrGetConversation(c *gin.Context) {
 			if err := h.DB.Where("conversation_id = ? AND user_id = ?", m.ConversationID, req.MemberID).First(&otherMember).Error; err == nil {
 				var conv models.Conversation
 				if err := h.DB.First(&conv, "id = ?", m.ConversationID).Error; err == nil && conv.Type == "private" {
+					var otherUser models.User
+					if h.DB.First(&otherUser, "id = ?", req.MemberID).Error == nil {
+						conv.Name = otherUser.Name
+						conv.Avatar = otherUser.Avatar
+					}
 					c.JSON(http.StatusOK, conv)
 					return
 				}
