@@ -4,6 +4,7 @@ import { Colors, Spacing, FontSize, BorderRadius } from '../../theme';
 import { useAppContext } from '../../context/AppContext';
 import { User } from '../../types';
 import ContactItem from '../../components/ContactItem';
+import IconOutline from '@ant-design/icons-react-native/lib/outline';
 
 interface SectionData {
   title: string;
@@ -78,13 +79,13 @@ export default function ContactsScreen() {
       <View style={styles.topActions}>
         <Pressable style={styles.actionItem}>
           <View style={[styles.actionIcon, { backgroundColor: Colors.primary }]}>
-            <Text style={styles.actionIconText}>N</Text>
+            <IconOutline name="user-add" size={20} color={Colors.white} />
           </View>
           <Text style={styles.actionLabel}>新的朋友</Text>
         </Pressable>
         <Pressable style={styles.actionItem}>
           <View style={[styles.actionIcon, { backgroundColor: Colors.success }]}>
-            <Text style={styles.actionIconText}>G</Text>
+            <IconOutline name="team" size={20} color={Colors.white} />
           </View>
           <Text style={styles.actionLabel}>群聊</Text>
         </Pressable>
@@ -123,11 +124,6 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  actionIconText: {
-    color: Colors.white,
-    fontSize: FontSize.lg,
-    fontWeight: '600',
   },
   actionLabel: {
     marginLeft: Spacing.sm,

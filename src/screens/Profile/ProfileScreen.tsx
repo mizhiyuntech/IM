@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
 import { List } from '@ant-design/react-native';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../theme';
 import { useAppContext } from '../../context/AppContext';
+import IconOutline from '@ant-design/icons-react-native/lib/outline';
 
 export default function ProfileScreen() {
   const { state, logout } = useAppContext();
@@ -24,20 +25,46 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <List>
           <List.Item extra="张三" arrow="horizontal">
-            昵称
+            <View style={styles.listItemRow}>
+              <IconOutline name="user" size={18} color={Colors.primary} />
+              <Text style={styles.listItemText}>昵称</Text>
+            </View>
           </List.Item>
           <List.Item extra="13800138000" arrow="horizontal">
-            手机号
+            <View style={styles.listItemRow}>
+              <IconOutline name="phone" size={18} color={Colors.primary} />
+              <Text style={styles.listItemText}>手机号</Text>
+            </View>
           </List.Item>
-          <List.Item arrow="horizontal">二维码名片</List.Item>
+          <List.Item arrow="horizontal">
+            <View style={styles.listItemRow}>
+              <IconOutline name="qrcode" size={18} color={Colors.primary} />
+              <Text style={styles.listItemText}>二维码名片</Text>
+            </View>
+          </List.Item>
         </List>
       </View>
 
       <View style={styles.section}>
         <List>
-          <List.Item arrow="horizontal">设置</List.Item>
-          <List.Item arrow="horizontal">关于</List.Item>
-          <List.Item arrow="horizontal">帮助与反馈</List.Item>
+          <List.Item arrow="horizontal">
+            <View style={styles.listItemRow}>
+              <IconOutline name="setting" size={18} color={Colors.primary} />
+              <Text style={styles.listItemText}>设置</Text>
+            </View>
+          </List.Item>
+          <List.Item arrow="horizontal">
+            <View style={styles.listItemRow}>
+              <IconOutline name="info-circle" size={18} color={Colors.primary} />
+              <Text style={styles.listItemText}>关于</Text>
+            </View>
+          </List.Item>
+          <List.Item arrow="horizontal">
+            <View style={styles.listItemRow}>
+              <IconOutline name="question-circle" size={18} color={Colors.primary} />
+              <Text style={styles.listItemText}>帮助与反馈</Text>
+            </View>
+          </List.Item>
         </List>
       </View>
 
@@ -84,6 +111,15 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: Spacing.md,
+  },
+  listItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  listItemText: {
+    marginLeft: Spacing.sm,
+    fontSize: FontSize.md,
+    color: Colors.textPrimary,
   },
   logoutButton: {
     marginTop: Spacing.xl,

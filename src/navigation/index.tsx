@@ -9,7 +9,9 @@ import ChatListScreen from '../screens/ChatList/ChatListScreen';
 import ChatScreen from '../screens/Chat/ChatScreen';
 import ContactsScreen from '../screens/Contacts/ContactsScreen';
 import ProfileScreen from '../screens/Profile/ProfileScreen';
-import { Text, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
+import IconOutline from '@ant-design/icons-react-native/lib/outline';
+import IconFill from '@ant-design/icons-react-native/lib/fill';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -32,20 +34,28 @@ const tabScreenOptions = ({
   route: { name: string };
 }) => ({
   tabBarIcon: ({ focused }: { focused: boolean }) => {
-    const icons: Record<string, string> = {
-      ChatList: '\u{1F4AC}',
-      Contacts: '\u{1F4C7}',
-      Profile: '\u{1F464}',
-    };
-    return (
-      <Text
-        style={[
-          styles.tabIcon,
-          { color: focused ? Colors.primary : Colors.tabInactive },
-        ]}>
-        {icons[route.name] || ''}
-      </Text>
-    );
+    const iconColor = focused ? Colors.primary : Colors.tabInactive;
+    const iconSize = 22;
+    if (route.name === 'ChatList') {
+      return focused ? (
+        <IconFill name="message" size={iconSize} color={iconColor} />
+      ) : (
+        <IconOutline name="message" size={iconSize} color={iconColor} />
+      );
+    }
+    if (route.name === 'Contacts') {
+      return focused ? (
+        <IconFill name="contacts" size={iconSize} color={iconColor} />
+      ) : (
+        <IconOutline name="contacts" size={iconSize} color={iconColor} />
+      );
+    }
+    if (route.name === 'Profile') {
+      return (
+        <IconOutline name="user" size={iconSize} color={iconColor} />
+      );
+    }
+    return null;
   },
   tabBarActiveTintColor: Colors.primary,
   tabBarInactiveTintColor: Colors.tabInactive,
@@ -110,9 +120,6 @@ export default function AppNavigator() {
 }
 
 const styles = StyleSheet.create({
-  tabIcon: {
-    fontSize: 20,
-  },
   tabLabel: {
     fontSize: FontSize.sm,
   },

@@ -5,7 +5,6 @@ import {
   FlatList,
   TextInput,
   Pressable,
-  Text,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -16,6 +15,7 @@ import ChatBubble from '../../components/ChatBubble';
 import { useRoute } from '@react-navigation/native';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation';
+import IconOutline from '@ant-design/icons-react-native/lib/outline';
 
 type ChatRouteProp = RouteProp<RootStackParamList, 'Chat'>;
 
@@ -79,7 +79,7 @@ export default function ChatScreen() {
           onPress={handleSend}
           style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
           disabled={!inputText.trim()}>
-          <Text style={styles.sendButtonText}>发送</Text>
+          <IconOutline name="send" size={18} color={Colors.white} />
         </Pressable>
       </View>
     </KeyboardAvoidingView>
@@ -116,20 +116,14 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     marginLeft: Spacing.sm,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
+    width: 40,
+    height: 40,
     backgroundColor: Colors.primary,
     borderRadius: BorderRadius.md,
-    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sendButtonDisabled: {
     backgroundColor: Colors.border,
-  },
-  sendButtonText: {
-    color: Colors.white,
-    fontSize: FontSize.md,
-    fontWeight: '500',
   },
 });

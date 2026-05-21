@@ -9,6 +9,7 @@ import {
 import { Button, Input } from '@ant-design/react-native';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../theme';
 import { useAppContext } from '../../context/AppContext';
+import IconOutline from '@ant-design/icons-react-native/lib/outline';
 
 export default function LoginScreen() {
   const { login } = useAppContext();
@@ -31,7 +32,7 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.header}>
         <View style={styles.logoContainer}>
-          <Text style={styles.logoText}>IM</Text>
+          <IconOutline name="message" size={36} color={Colors.white} />
         </View>
         <Text style={styles.title}>即时通讯</Text>
         <Text style={styles.subtitle}>登录以开始聊天</Text>
@@ -91,11 +92,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.lg,
-  },
-  logoText: {
-    fontSize: FontSize.title,
-    fontWeight: '700',
-    color: Colors.white,
   },
   title: {
     fontSize: FontSize.xxl,
