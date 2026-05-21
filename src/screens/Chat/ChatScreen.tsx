@@ -15,7 +15,7 @@ import ChatBubble from '../../components/ChatBubble';
 import { useRoute } from '@react-navigation/native';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation';
-import IconOutline from '@ant-design/icons-react-native/lib/outline';
+import { IconOutline } from '@ant-design/icons-react-native';
 
 type ChatRouteProp = RouteProp<RootStackParamList, 'Chat'>;
 

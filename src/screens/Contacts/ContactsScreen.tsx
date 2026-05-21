@@ -4,7 +4,7 @@ import { Colors, Spacing, FontSize, BorderRadius } from '../../theme';
 import { useAppContext } from '../../context/AppContext';
 import { User } from '../../types';
 import ContactItem from '../../components/ContactItem';
-import IconOutline from '@ant-design/icons-react-native/lib/outline';
+import { IconOutline } from '@ant-design/icons-react-native';
 
 interface SectionData {
   title: string;

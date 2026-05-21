@@ -10,8 +10,7 @@ import ChatScreen from '../screens/Chat/ChatScreen';
 import ContactsScreen from '../screens/Contacts/ContactsScreen';
 import ProfileScreen from '../screens/Profile/ProfileScreen';
 import { StyleSheet } from 'react-native';
-import IconOutline from '@ant-design/icons-react-native/lib/outline';
-import IconFill from '@ant-design/icons-react-native/lib/fill';
+import { IconOutline, IconFill } from '@ant-design/icons-react-native';
 
 export type RootStackParamList = {
   Login: undefined;

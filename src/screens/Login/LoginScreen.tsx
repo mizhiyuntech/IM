@@ -9,7 +9,7 @@ import {
 import { Button, Input } from '@ant-design/react-native';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../theme';
 import { useAppContext } from '../../context/AppContext';
-import IconOutline from '@ant-design/icons-react-native/lib/outline';
+import { IconOutline } from '@ant-design/icons-react-native';
 
 export default function LoginScreen() {
   const { login } = useAppContext();

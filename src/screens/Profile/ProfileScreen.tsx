@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
 import { List } from '@ant-design/react-native';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../theme';
 import { useAppContext } from '../../context/AppContext';
-import IconOutline from '@ant-design/icons-react-native/lib/outline';
+import { IconOutline } from '@ant-design/icons-react-native';
 
 export default function ProfileScreen() {
   const { state, logout } = useAppContext();
