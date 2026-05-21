@@ -103,6 +103,21 @@ export const api = {
     return request(`/users/${id}`);
   },
 
+  searchUsers(keyword: string): Promise<{ id: string; name: string; avatar: string; phone: string }[]> {
+    return request(`/users/search?keyword=${encodeURIComponent(keyword)}`);
+  },
+
+  addContact(contactId: string): Promise<{ message: string }> {
+    return request('/users/contacts', {
+      method: 'POST',
+      body: JSON.stringify({ contact_id: contactId }),
+    });
+  },
+
+  deleteContact(contactId: string): Promise<{ message: string }> {
+    return request(`/users/contacts/${contactId}`, { method: 'DELETE' });
+  },
+
   getConversations(): Promise<ConversationResponse[]> {
     return request('/conversations');
   },

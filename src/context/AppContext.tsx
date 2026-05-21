@@ -1,6 +1,10 @@
-import React, { createContext, useContext, useReducer, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, ReactNode, useEffect } from 'react';
 import { User, Conversation } from '../types';
 import { api, setToken } from '../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const STORAGE_KEY_TOKEN = 'im_token';
+const STORAGE_KEY_USER = 'im_user';
 
 interface AppState {
   isLoggedIn: boolean;
@@ -8,17 +12,19 @@ interface AppState {
   conversations: Conversation[];
   users: User[];
   loading: boolean;
+  restoring: boolean;
 }
 
 type Action =
   | { type: 'SET_LOADING'; payload: boolean }
-  | { type: 'LOGIN'; payload: { user: User; token: string } }
+  | { type: 'LOGIN'; payload: { user: User } }
   | { type: 'LOGOUT' }
   | { type: 'SET_CONVERSATIONS'; payload: Conversation[] }
   | { type: 'SET_USERS'; payload: User[] }
   | { type: 'UPDATE_CONVERSATION'; payload: Conversation }
   | { type: 'REMOVE_CONVERSATION'; payload: string }
-  | { type: 'MARK_AS_READ'; payload: string };
+  | { type: 'MARK_AS_READ'; payload: string }
+  | { type: 'RESTORE_DONE' };
 
 const initialState: AppState = {
   isLoggedIn: false,
@@ -26,6 +32,7 @@ const initialState: AppState = {
   conversations: [],
   users: [],
   loading: false,
+  restoring: true,
 };
 
 function appReducer(state: AppState, action: Action): AppState {
@@ -74,6 +81,8 @@ function appReducer(state: AppState, action: Action): AppState {
           return conv;
         }),
       };
+    case 'RESTORE_DONE':
+      return { ...state, restoring: false };
     default:
       return state;
   }
@@ -82,7 +91,7 @@ function appReducer(state: AppState, action: Action): AppState {
 interface AppContextType {
   state: AppState;
   login: (phone: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   fetchConversations: () => Promise<void>;
   fetchUsers: () => Promise<void>;
   sendMessage: (conversationId: string, content: string) => Promise<void>;
@@ -96,6 +105,45 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
+  useEffect(() => {
+    restoreSession();
+  }, []);
+
+  const restoreSession = async () => {
+    try {
+      const savedToken = await AsyncStorage.getItem(STORAGE_KEY_TOKEN);
+      const savedUser = await AsyncStorage.getItem(STORAGE_KEY_USER);
+
+      if (savedToken && savedUser) {
+        setToken(savedToken);
+        const user: User = JSON.parse(savedUser);
+        dispatch({ type: 'LOGIN', payload: { user } });
+
+        try {
+          const freshUser = await api.getCurrentUser();
+          const updatedUser: User = {
+            id: freshUser.id,
+            name: freshUser.name,
+            avatar: freshUser.avatar,
+            phone: freshUser.phone,
+          };
+          await AsyncStorage.setItem(STORAGE_KEY_USER, JSON.stringify(updatedUser));
+          dispatch({ type: 'LOGIN', payload: { user: updatedUser } });
+        } catch {
+          // token expired, clear session
+          await AsyncStorage.removeItem(STORAGE_KEY_TOKEN);
+          await AsyncStorage.removeItem(STORAGE_KEY_USER);
+          setToken(null);
+          dispatch({ type: 'LOGOUT' });
+        }
+      }
+    } catch {
+      // AsyncStorage error
+    } finally {
+      dispatch({ type: 'RESTORE_DONE' });
+    }
+  };
+
   const login = useCallback(async (phone: string, password: string) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
@@ -107,14 +155,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
         avatar: res.user.avatar,
         phone: res.user.phone,
       };
-      dispatch({ type: 'LOGIN', payload: { user, token: res.token } });
+      await AsyncStorage.setItem(STORAGE_KEY_TOKEN, res.token);
+      await AsyncStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
+      dispatch({ type: 'LOGIN', payload: { user } });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     setToken(null);
+    await AsyncStorage.removeItem(STORAGE_KEY_TOKEN);
+    await AsyncStorage.removeItem(STORAGE_KEY_USER);
     dispatch({ type: 'LOGOUT' });
   }, []);
 
@@ -138,7 +190,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const fetchUsers = useCallback(async () => {
     try {
-      const res = await api.getUsers();
+      const res = await api.getContacts();
       const users: User[] = res.map(item => ({
         id: item.id,
         name: item.name,
@@ -194,6 +246,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     [state.currentUser, state.users],
   );
+
+  if (state.restoring) {
+    return null;
+  }
 
   return (
     <AppContext.Provider

@@ -1,10 +1,13 @@
 import React, { useCallback, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, SectionList, Pressable } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../theme';
 import { useAppContext } from '../../context/AppContext';
 import { User } from '../../types';
 import ContactItem from '../../components/ContactItem';
 import { IconOutline } from '@ant-design/icons-react-native';
+import { RootStackParamList } from '../../navigation';
 
 interface SectionData {
   title: string;
@@ -13,6 +16,7 @@ interface SectionData {
 
 export default function ContactsScreen() {
   const { state, fetchUsers } = useAppContext();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     fetchUsers();
@@ -72,7 +76,9 @@ export default function ContactsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.topActions}>
-        <Pressable style={styles.actionItem}>
+        <Pressable
+          style={styles.actionItem}
+          onPress={() => navigation.navigate('AddFriend')}>
           <View style={[styles.actionIcon, { backgroundColor: Colors.primary }]}>
             <IconOutline name="user-add" size={20} color={Colors.white} />
           </View>

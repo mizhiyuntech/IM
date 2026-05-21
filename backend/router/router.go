@@ -34,7 +34,10 @@ func Setup(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 			users := authed.Group("/users")
 			{
 				users.GET("", userHandler.GetAllUsers)
+				users.GET("/search", userHandler.SearchUser)
 				users.GET("/contacts", userHandler.GetContacts)
+				users.POST("/contacts", userHandler.AddContact)
+				users.DELETE("/contacts/:id", userHandler.DeleteContact)
 				users.GET("/:id", userHandler.GetUserByID)
 			}
 
