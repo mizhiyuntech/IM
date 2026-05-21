@@ -135,3 +135,30 @@ func (h *UserHandler) DeleteContact(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "ok"})
 }
+
+func (h *UserHandler) UpdateProfile(c *gin.Context) {
+	userID := c.GetString("userID")
+
+	var req struct {
+		Name string `json:"name"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请求参数无效"})
+		return
+	}
+
+	if req.Name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "昵称不能为空"})
+		return
+	}
+
+	if err := h.DB.Model(&models.User{}).Where("id = ?", userID).Update("name", req.Name).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "修改昵称失败"})
+		return
+	}
+
+	var user models.User
+	h.DB.First(&user, "id = ?", userID)
+
+	c.JSON(http.StatusOK, user)
+}

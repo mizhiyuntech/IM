@@ -6,6 +6,7 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
 } from 'react-native';
 import { Colors, Spacing, BorderRadius } from '../../theme';
 import { useAppContext } from '../../context/AppContext';
@@ -106,6 +107,7 @@ export default function ChatScreen() {
     const text = inputText.trim();
     if (!text) return;
     setInputText('');
+    Keyboard.dismiss();
     await sendMessage(conversationId, text);
     fetchMessages();
   }, [inputText, conversationId, sendMessage, fetchMessages]);
@@ -126,8 +128,9 @@ export default function ChatScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={90}>
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      enabled>
       <FlatList
         ref={flatListRef}
         data={messages}
@@ -137,6 +140,7 @@ export default function ChatScreen() {
         onContentSizeChange={() =>
           flatListRef.current?.scrollToEnd({ animated: true })
         }
+        keyboardShouldPersistTaps="handled"
       />
       <View style={styles.inputBar}>
         <Input

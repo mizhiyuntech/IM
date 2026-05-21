@@ -1,14 +1,57 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { List, Button } from '@ant-design/react-native';
+import React, { useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+} from 'react-native';
+import { List, Button, Modal, Toast } from '@ant-design/react-native';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../theme';
 import { useAppContext } from '../../context/AppContext';
 import { IconOutline } from '@ant-design/icons-react-native';
 import Avatar from '../../components/Avatar';
+import { api } from '../../services/api';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../navigation';
+
+type ProfileNavProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function ProfileScreen() {
-  const { state, logout } = useAppContext();
+  const { state, logout, updateCurrentUser } = useAppContext();
+  const navigation = useNavigation<ProfileNavProp>();
   const user = state.currentUser;
+
+  const handleEditName = useCallback(() => {
+    Modal.prompt(
+      '修改昵称',
+      '请输入新昵称',
+      async (value: string) => {
+        const name = (value || '').trim();
+        if (!name) {
+          Toast.fail({ content: '昵称不能为空', duration: 2 });
+          return;
+        }
+        try {
+          const res = await api.updateProfile(name);
+          updateCurrentUser({
+            id: res.id,
+            name: res.name,
+            avatar: res.avatar,
+            phone: res.phone,
+          });
+          Toast.success({ content: '昵称修改成功', duration: 1 });
+        } catch (e: any) {
+          Toast.fail({ content: e.message || '修改失败', duration: 2 });
+        }
+      },
+      'default',
+      user?.name || '',
+    );
+  }, [user?.name, updateCurrentUser]);
+
+  const handleQRCode = useCallback(() => {
+    navigation.navigate('QRCodeCard');
+  }, [navigation]);
 
   return (
     <View style={styles.container}>
@@ -22,19 +65,22 @@ export default function ProfileScreen() {
 
       <View style={styles.section}>
         <List>
-          <List.Item extra="张三" arrow="horizontal">
+          <List.Item
+            extra={user?.name || ''}
+            arrow="horizontal"
+            onPress={handleEditName}>
             <View style={styles.listItemRow}>
               <IconOutline name="user" size={18} color={Colors.primary} />
               <Text style={styles.listItemText}>昵称</Text>
             </View>
           </List.Item>
-          <List.Item extra="13800138000" arrow="horizontal">
+          <List.Item extra={user?.phone || ''}>
             <View style={styles.listItemRow}>
               <IconOutline name="phone" size={18} color={Colors.primary} />
               <Text style={styles.listItemText}>手机号</Text>
             </View>
           </List.Item>
-          <List.Item arrow="horizontal">
+          <List.Item arrow="horizontal" onPress={handleQRCode}>
             <View style={styles.listItemRow}>
               <IconOutline name="qrcode" size={18} color={Colors.primary} />
               <Text style={styles.listItemText}>二维码名片</Text>
@@ -55,12 +101,6 @@ export default function ProfileScreen() {
             <View style={styles.listItemRow}>
               <IconOutline name="info-circle" size={18} color={Colors.primary} />
               <Text style={styles.listItemText}>关于</Text>
-            </View>
-          </List.Item>
-          <List.Item arrow="horizontal">
-            <View style={styles.listItemRow}>
-              <IconOutline name="question-circle" size={18} color={Colors.primary} />
-              <Text style={styles.listItemText}>帮助与反馈</Text>
             </View>
           </List.Item>
         </List>

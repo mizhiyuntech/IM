@@ -35,6 +35,7 @@ func Setup(r *gin.Engine, db *gorm.DB, cfg *config.Config, hub *ws.Hub) {
 		authed.Use(middleware.AuthMiddleware(cfg))
 		{
 			authed.GET("/user/me", authHandler.GetCurrentUser)
+			authed.PUT("/user/profile", userHandler.UpdateProfile)
 
 			users := authed.Group("/users")
 			{

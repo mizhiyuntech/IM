@@ -46,6 +46,13 @@ export interface LoginResponse {
   };
 }
 
+export interface UserResponse {
+  id: string;
+  name: string;
+  avatar: string;
+  phone: string;
+}
+
 export interface ConversationResponse {
   id: string;
   type: string;
@@ -233,5 +240,12 @@ export const api = {
 
   leaveGroup(groupId: string): Promise<{ message: string }> {
     return request(`/groups/${groupId}/leave`, { method: 'POST' });
+  },
+
+  updateProfile(name: string): Promise<UserResponse> {
+    return request('/user/profile', {
+      method: 'PUT',
+      body: JSON.stringify({ name }),
+    });
   },
 };

@@ -28,6 +28,7 @@ type Action =
   | { type: 'REMOVE_CONVERSATION'; payload: string }
   | { type: 'MARK_AS_READ'; payload: string }
   | { type: 'ADD_MESSAGE'; payload: { conversationId: string; message: Message } }
+  | { type: 'UPDATE_CURRENT_USER'; payload: User }
   | { type: 'RESTORE_DONE' };
 
 const initialState: AppGlobalState = {
@@ -104,6 +105,8 @@ function appReducer(state: AppGlobalState, action: Action): AppGlobalState {
     }
     case 'RESTORE_DONE':
       return { ...state, restoring: false };
+    case 'UPDATE_CURRENT_USER':
+      return { ...state, currentUser: action.payload };
     default:
       return state;
   }
@@ -119,6 +122,7 @@ interface AppContextType {
   markAsRead: (conversationId: string) => Promise<void>;
   deleteConversation: (conversationId: string) => Promise<void>;
   getUserById: (id: string) => User | undefined;
+  updateCurrentUser: (user: User) => void;
   onWSMessage: (msg: any) => void;
   activeConversationId: string | null;
   setActiveConversationId: (id: string | null) => void;
@@ -286,6 +290,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [state.currentUser, state.users],
   );
 
+  const updateCurrentUser = useCallback((user: User) => {
+    dispatch({ type: 'UPDATE_CURRENT_USER', payload: user });
+    AsyncStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user)).catch(() => {});
+  }, []);
+
   const onWSMessage = useCallback((msg: any) => {
     if (msg.type === 'new_message' && msg.data) {
       const wsMsg = msg.data;
@@ -361,6 +370,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         markAsRead,
         deleteConversation,
         getUserById,
+        updateCurrentUser,
         onWSMessage,
         activeConversationId,
         setActiveConversationId: setActiveConvId,

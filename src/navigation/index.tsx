@@ -9,6 +9,7 @@ import RegisterScreen from '../screens/Register/RegisterScreen';
 import AddFriendScreen from '../screens/AddFriend/AddFriendScreen';
 import CreateGroupScreen from '../screens/CreateGroup/CreateGroupScreen';
 import GroupSettingsScreen from '../screens/GroupSettings/GroupSettingsScreen';
+import QRCodeCardScreen from '../screens/QRCodeCard/QRCodeCardScreen';
 import ContactDetailScreen from '../screens/ContactDetail/ContactDetailScreen';
 import ChatListScreen from '../screens/ChatList/ChatListScreen';
 import ChatScreen from '../screens/Chat/ChatScreen';
@@ -33,6 +34,7 @@ export type RootStackParamList = {
     groupId: string;
     conversationId: string;
   };
+  QRCodeCard: undefined;
   ContactDetail: {
     userId: string;
     userName: string;
@@ -179,6 +181,18 @@ export default function AppNavigator() {
               options={{
                 headerShown: true,
                 headerTitle: '群设置',
+                headerTitleStyle: styles.headerTitle,
+                headerTintColor: Colors.textPrimary,
+                headerStyle: { backgroundColor: Colors.white },
+                headerShadowVisible: false,
+              }}
+            />
+            <Stack.Screen
+              name="QRCodeCard"
+              component={QRCodeCardScreen}
+              options={{
+                headerShown: true,
+                headerTitle: '二维码名片',
                 headerTitleStyle: styles.headerTitle,
                 headerTintColor: Colors.textPrimary,
                 headerStyle: { backgroundColor: Colors.white },
